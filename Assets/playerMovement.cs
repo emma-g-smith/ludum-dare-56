@@ -49,7 +49,6 @@ public class playerMovement : MonoBehaviour
 
         unlockedCharacters = new HashSet<Characters>();
         unlockedCharacters.Add(Characters.Cat);
-        unlockedCharacters.Add(Characters.Mouse);
 
         playableCharacters = new HashSet<Characters>();
         playableCharacters.Add(Characters.Cat);
@@ -60,22 +59,25 @@ public class playerMovement : MonoBehaviour
 
         currentCharacter = Characters.Cat;
 
-        swapCharacter(currentCharacter);
+        RaycastHit2D interactionHitInformation = Physics2D.BoxCast(transform.position, new Vector2(interactionRadius, interactionRadius), 0, Vector2.zero);
+        swapCharacter(currentCharacter, interactionHitInformation);
     }
 
     // Update is called once per frame
     void Update()
     {
-        // Make it so characters can't be changed in bad places. Make sure current implementation does not allow for walking through walls <- layermask is going to be the secret sauce here
+        // Make it so characters can't be changed in bad places.
         // Add sliding on walls so movement feels nicer <- do a raycast in each direction, and alter the movement vector accordingly to where you can go
         // Need pumpkin minigame and pumpkin block
 
-        movementControl();
+        RaycastHit2D interactionHitInformation = Physics2D.BoxCast(transform.position, new Vector2(interactionRadius, interactionRadius), 0, Vector2.zero);
 
-        characterControl();
+        movementControl(interactionHitInformation);
+
+        characterControl(interactionHitInformation);
     }
 
-    private void movementControl()
+    private void movementControl(RaycastHit2D interactionHitInformation)
     {
         Vector3 moveVector = new Vector3(0, 0);
         bool interacting = false;
@@ -107,7 +109,6 @@ public class playerMovement : MonoBehaviour
         moveVector = moveVector.normalized * Time.deltaTime * movementSpeed;
         RaycastHit2D bigHitInformation = Physics2D.BoxCast(transform.position, new Vector2(bigBoxSize, bigBoxSize), 0, moveVector);
         RaycastHit2D smallHitInformation = Physics2D.BoxCast(transform.position, new Vector2(smallBoxSize, smallBoxSize), 0, moveVector);
-        RaycastHit2D interactionHitInformation = Physics2D.BoxCast(transform.position, new Vector2(interactionRadius, interactionRadius), 0, Vector2.zero);
 
         RaycastHit2D test = Physics2D.BoxCast(transform.position, new Vector2(smallBoxSize, smallBoxSize), 0, moveVector, distance, layerMask);
 
@@ -174,30 +175,51 @@ public class playerMovement : MonoBehaviour
         transform.position += moveVector;
     }
 
-    private void characterControl()
+    private void characterControl(RaycastHit2D interactionHitInformation)
     {
         if (Input.GetKeyDown(KeyCode.Alpha1))
         {
-            swapCharacter(Characters.Cat);
+            swapCharacter(Characters.Cat, interactionHitInformation);
         }
 
         if (Input.GetKeyDown(KeyCode.Alpha2))
         {
-            swapCharacter(Characters.Mouse);
+            swapCharacter(Characters.Mouse, interactionHitInformation);
         }
 
         if (Input.GetKeyDown(KeyCode.Alpha3))
         {
-            swapCharacter(Characters.Bat);
+            swapCharacter(Characters.Bat, interactionHitInformation);
         }
     }
 
-    private void swapCharacter(Characters targetCharacter)
+    private void swapCharacter(Characters targetCharacter, RaycastHit2D interactionHitInformation)
     {
-        if (unlockedCharacters.Contains(targetCharacter))
+        bool changeCharacter = true;
+        
+        // Don't allow change if character is not unlocked
+        if (!unlockedCharacters.Contains(targetCharacter))
+        {
+            changeCharacter = false;
+        }
+
+        // make it so that characters can only be swapped in good places
+        if (interactionHitInformation.collider != null)
+        {
+            ColliderInformation information = colliderInformations[interactionHitInformation.collider.tag];
+
+            if (information.StopMovement && information.Character != targetCharacter)
+            {
+                changeCharacter = false;
+            }
+        }
+
+        // change character if it is appropriate to do so
+        if (changeCharacter)
         {
             currentCharacter = targetCharacter;
         }
+
 
         foreach (Characters character in playableCharacters)
         {
@@ -211,14 +233,7 @@ public class playerMovement : MonoBehaviour
             }
         }
 
-        /*if (charachterInformations[currentCharacter].IsSmall)
-        {
-            transform.localScale = new Vector3(scaleValue, scaleValue, scaleValue);
-        }
-        else
-        {
-            transform.localScale = new Vector3(1, 1, 1);
-        }*/
+        
     }
 
     private class CharacterInformation
