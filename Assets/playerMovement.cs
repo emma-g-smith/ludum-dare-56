@@ -49,6 +49,7 @@ public class playerMovement : MonoBehaviour
 
         unlockedCharacters = new HashSet<Characters>();
         unlockedCharacters.Add(Characters.Cat);
+        unlockedCharacters.Add(Characters.Mouse);
 
         playableCharacters = new HashSet<Characters>();
         playableCharacters.Add(Characters.Cat);
@@ -100,30 +101,43 @@ public class playerMovement : MonoBehaviour
             interacting = true;
         }
 
+        float bigBoxSize = 1f;
+        float smallBoxSize = 0.9f;
+
         moveVector = moveVector.normalized * Time.deltaTime * movementSpeed;
-        RaycastHit2D bigHitInformation = Physics2D.BoxCast(transform.position, Vector2.one, 0, moveVector);
-        RaycastHit2D smallHitInformation = Physics2D.BoxCast(transform.position, new Vector2(0.9f, 0.9f), 0, moveVector);
+        RaycastHit2D bigHitInformation = Physics2D.BoxCast(transform.position, new Vector2(bigBoxSize, bigBoxSize), 0, moveVector);
+        RaycastHit2D smallHitInformation = Physics2D.BoxCast(transform.position, new Vector2(smallBoxSize, smallBoxSize), 0, moveVector);
         RaycastHit2D interactionHitInformation = Physics2D.BoxCast(transform.position, new Vector2(interactionRadius, interactionRadius), 0, Vector2.zero);
 
-        RaycastHit2D test = Physics2D.BoxCast(transform.position, Vector2.one, 0, moveVector, distance, layerMask);
+        RaycastHit2D test = Physics2D.BoxCast(transform.position, new Vector2(smallBoxSize, smallBoxSize), 0, moveVector, distance, layerMask);
 
         bool goingToCollide = moveVector.magnitude > bigHitInformation.distance;
-        bool notMovingTowardsCollision = smallHitInformation.distance - bigHitInformation.distance < 0.1f;
-        bool raysCollided = !(bigHitInformation.distance == 0 && smallHitInformation.distance == 0);
+        bool movingTowardsCollision = smallHitInformation.distance - bigHitInformation.distance < bigBoxSize - smallBoxSize;
+        bool inWall = true;
+        bool raysCollided = bigHitInformation.collider != null && smallHitInformation.collider != null;
         bool stopMovement = false;
 
         // check if thing being interacted with is in the interaction radius
         interacting &= interactionHitInformation.collider != null;
 
-        if (test.collider != null)
+        // Correcting for in wall edge case behavior
+        if (bigHitInformation.collider != null && smallHitInformation.collider != null)
         {
-            Debug.Log(test.collider.tag);
+            ColliderInformation bigInformation = colliderInformations[bigHitInformation.collider.tag];
+            ColliderInformation smallInformation = colliderInformations[smallHitInformation.collider.tag];
+
+            bool bigNoMove = bigInformation.StopMovement && currentCharacter != bigInformation.Character && bigHitInformation.distance == 0;
+            bool smallCanMove = !(smallInformation.StopMovement && currentCharacter != smallInformation.Character) && smallHitInformation.distance == 0;
+            bool movingAwayFromWall = test.collider == null;
+
+            inWall = !(bigNoMove && smallCanMove && movingAwayFromWall);
         }
 
         // only stop movement for specific cases
         if (bigHitInformation.collider != null)
         {
             ColliderInformation information = colliderInformations[bigHitInformation.collider.tag];
+
 
             // stop movement
             if (currentCharacter != information.Character || information.CanBreak)
@@ -152,8 +166,7 @@ public class playerMovement : MonoBehaviour
             }
         }
 
-
-        if (goingToCollide && notMovingTowardsCollision && raysCollided && stopMovement)
+        if (goingToCollide && movingTowardsCollision && raysCollided && stopMovement && inWall)
         {
             moveVector = moveVector / moveVector.magnitude * bigHitInformation.distance;
         }
