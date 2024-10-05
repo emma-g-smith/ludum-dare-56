@@ -3,16 +3,24 @@
 --- !u!78 &1
 TagManager:
   serializedVersion: 2
-  tags: []
+  tags:
+  - Water
+  - MouseHole
+  - Key
+  - Vine
+  - Wall
+  - MouseAcquire
+  - BatAcquire
+  - Door
   layers:
   - Default
   - TransparentFX
   - Ignore Raycast
-  - 
+  - Top
   - Water
   - UI
-  - 
-  - 
+  - Middle
+  - Bottom
   - 
   - 
   - 
