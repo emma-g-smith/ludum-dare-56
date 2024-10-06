@@ -15,6 +15,7 @@ public class playerMovement : MonoBehaviour
     [SerializeField] private Animator batAnimator;
 
     private Dictionary<Characters, CharacterInformation> charachterInformations;
+    private Dictionary<Characters, Animator> charachterAnimators;
     private Dictionary<string, ColliderInformation> colliderInformations;
     private HashSet<Characters> unlockedCharacters;
     private HashSet<Characters> playableCharacters;
@@ -41,7 +42,12 @@ public class playerMovement : MonoBehaviour
         charachterInformations[Characters.Mouse] = new CharacterInformation(false, true, false, "MouseImage");
         charachterInformations[Characters.Bat] = new CharacterInformation(false, false, true, "BatImage");
 
-        // TODO: Add door (unlocked with key)
+        charachterAnimators = new Dictionary<Characters, Animator>();
+        charachterAnimators[Characters.Cat] = catAnimator;
+        charachterAnimators[Characters.Mouse] = mouseAnimator;
+        charachterAnimators[Characters.Bat] = batAnimator;
+
+
         colliderInformations = new Dictionary<string, ColliderInformation>();
         colliderInformations["Wall"] = new ColliderInformation(stopMovement:true);
         colliderInformations["Water"] = new ColliderInformation(stopMovement:true, character:Characters.Bat);
@@ -74,17 +80,17 @@ public class playerMovement : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        // Add sliding on walls so movement feels nicer <- do a raycast in each direction, and alter the movement vector accordingly to where you can go
-        // Get rid of small cap in corner collision
-        // Need pumpkin minigame and pumpkin block
-
         RaycastHit2D interactionHitInformation = Physics2D.BoxCast(transform.position, new Vector2(interactionRadius, interactionRadius), 0, Vector2.zero);
 
         movementControl(interactionHitInformation);
 
         characterControl(interactionHitInformation);
 
-        wasInteracting = catAnimator.GetCurrentAnimatorStateInfo(0).IsName("cat_claw");
+        // only have custom interaction code if cat
+        if (currentCharacter == Characters.Cat)
+        {
+            wasInteracting = catAnimator.GetCurrentAnimatorStateInfo(0).IsName("cat_claw");
+        }
     }
 
     private void movementControl(RaycastHit2D interactionHitInformation)
@@ -113,6 +119,14 @@ public class playerMovement : MonoBehaviour
             interacting = true;
         }
 
+        charachterAnimators[currentCharacter].SetBool("IsInteracting", interacting);
+
+        // add custom interacting timing for the cat
+        if (currentCharacter == Characters.Cat)
+        {
+            interacting = wasInteracting && !charachterAnimators[currentCharacter].GetCurrentAnimatorStateInfo(0).IsName("cat_claw");
+        }
+
         moveVector = moveVector.normalized * Time.deltaTime * movementSpeed;
 
         Vector3 calculatedMoveVector = moveCalculations(moveVector, interactionHitInformation, interacting);
@@ -136,26 +150,23 @@ public class playerMovement : MonoBehaviour
         
         moveVector = calculatedMoveVector;
 
-        //flip animation based on direction
+        //flip animation based on direction - this might not work when switching characters. Maybe solution is to flip us and not the images
         if (moveVector.x > 0)
         {
-            charachterInformations[currentCharacter].Image.transform.localRotation = Quaternion.Euler(0, 180, 0);
+            transform.localRotation = Quaternion.Euler(0, 180, 0);
         }
         if (moveVector.x < 0)
         {
-            charachterInformations[currentCharacter].Image.transform.localRotation = Quaternion.Euler(0, 0, 0);
+            transform.localRotation = Quaternion.Euler(0, 0, 0);
         }
 
-        catAnimator.SetBool("IsMoving", moveVector.magnitude != 0);
-        catAnimator.SetBool("IsInteracting", interacting);
+        charachterAnimators[currentCharacter].SetBool("IsMoving", moveVector.magnitude != 0);
 
         transform.position += moveVector;
     }
 
     private Vector3 moveCalculations(Vector3 potentialMove, RaycastHit2D interactionHitInformation, bool interacting)
     {
-        interacting = wasInteracting && !catAnimator.GetCurrentAnimatorStateInfo(0).IsName("cat_claw");
-
         float bigBoxSize = 1f;
         float smallBoxSize = 0.9f;
 
