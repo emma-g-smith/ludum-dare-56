@@ -14,6 +14,11 @@ public class playerMovement : MonoBehaviour
     [SerializeField] private Animator mouseAnimator;
     [SerializeField] private Animator batAnimator;
 
+    // Destroy after value testing
+    [SerializeField] private float catSize = 1.2f;
+    [SerializeField] private float mouseSize = 0.6f;
+    [SerializeField] private float batSize= 0.8f;
+
     private Dictionary<Characters, CharacterInformation> charachterInformations;
     private Dictionary<Characters, Animator> charachterAnimators;
     private Dictionary<string, ColliderInformation> colliderInformations;
@@ -38,15 +43,14 @@ public class playerMovement : MonoBehaviour
     void Start()
     {
         charachterInformations = new Dictionary<Characters, CharacterInformation>();
-        charachterInformations[Characters.Cat] = new CharacterInformation(true, false, false, "CatImage");
-        charachterInformations[Characters.Mouse] = new CharacterInformation(false, true, false, "MouseImage");
-        charachterInformations[Characters.Bat] = new CharacterInformation(false, false, true, "BatImage");
+        charachterInformations[Characters.Cat] = new CharacterInformation(true, false, false, catSize, "CatImage");
+        charachterInformations[Characters.Mouse] = new CharacterInformation(false, true, false, mouseSize, "MouseImage");
+        charachterInformations[Characters.Bat] = new CharacterInformation(false, false, true, batSize, "BatImage");
 
         charachterAnimators = new Dictionary<Characters, Animator>();
         charachterAnimators[Characters.Cat] = catAnimator;
         charachterAnimators[Characters.Mouse] = mouseAnimator;
         charachterAnimators[Characters.Bat] = batAnimator;
-
 
         colliderInformations = new Dictionary<string, ColliderInformation>();
         colliderInformations["Wall"] = new ColliderInformation(stopMovement:true);
@@ -71,8 +75,7 @@ public class playerMovement : MonoBehaviour
 
         currentCharacter = Characters.Cat;
 
-        RaycastHit2D interactionHitInformation = Physics2D.BoxCast(transform.position, new Vector2(interactionRadius, interactionRadius), 0, Vector2.zero);
-        swapCharacter(currentCharacter, interactionHitInformation);
+        swapCharacter(currentCharacter, getInteraction());
 
         wasInteracting = false;
     }
@@ -80,7 +83,7 @@ public class playerMovement : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        RaycastHit2D interactionHitInformation = Physics2D.BoxCast(transform.position, new Vector2(interactionRadius, interactionRadius), 0, Vector2.zero);
+        RaycastHit2D interactionHitInformation = getInteraction();
 
         movementControl(interactionHitInformation);
 
@@ -91,6 +94,12 @@ public class playerMovement : MonoBehaviour
         {
             wasInteracting = catAnimator.GetCurrentAnimatorStateInfo(0).IsName("cat_claw");
         }
+    }
+
+    private RaycastHit2D getInteraction()
+    {
+        float hitBoxScale = charachterInformations[currentCharacter].HitBoxScale;
+        return Physics2D.BoxCast(transform.position, new Vector2(interactionRadius * hitBoxScale, interactionRadius * hitBoxScale), 0, Vector2.zero);
     }
 
     private void movementControl(RaycastHit2D interactionHitInformation)
@@ -167,8 +176,8 @@ public class playerMovement : MonoBehaviour
 
     private Vector3 moveCalculations(Vector3 potentialMove, RaycastHit2D interactionHitInformation, bool interacting)
     {
-        float bigBoxSize = 1f;
-        float smallBoxSize = 0.9f;
+        float bigBoxSize = charachterInformations[currentCharacter].HitBoxScale;
+        float smallBoxSize = bigBoxSize * 0.9f;
 
         RaycastHit2D bigHitInformation = Physics2D.BoxCast(transform.position, new Vector2(bigBoxSize, bigBoxSize), 0, potentialMove);
         RaycastHit2D smallHitInformation = Physics2D.BoxCast(transform.position, new Vector2(smallBoxSize, smallBoxSize), 0, potentialMove);
@@ -201,7 +210,6 @@ public class playerMovement : MonoBehaviour
         if (bigHitInformation.collider != null)
         {
             ColliderInformation information = colliderInformations[bigHitInformation.collider.tag];
-
 
             // stop movement
             if (currentCharacter != information.Character || information.CanBreak)
@@ -313,19 +321,22 @@ public class playerMovement : MonoBehaviour
         private bool canSlash;
         private bool isSmall;
         private bool canFly;
+        private float hitBoxScale;
         private GameObject image;
 
         // Public Fields
         public bool CanSlash { get { return canSlash; } }
         public bool IsSmall{ get { return isSmall; } }
         public bool CanFly { get { return canFly; } }
+        public float HitBoxScale { get { return hitBoxScale; } }
         public GameObject Image { get { return image; } }
 
-        public CharacterInformation(bool canSlash, bool isSmall, bool canFly, string imageObjectName)
+        public CharacterInformation(bool canSlash, bool isSmall, bool canFly, float hitBoxScale, string imageObjectName)
         {
             this.canSlash = canSlash;
             this.isSmall = isSmall;
             this.canFly = canFly;
+            this.hitBoxScale = hitBoxScale;
             this.image = GameObject.Find(imageObjectName);
         }
     }
