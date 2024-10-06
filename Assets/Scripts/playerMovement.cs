@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 public class playerMovement : MonoBehaviour
 {
@@ -46,7 +47,7 @@ public class playerMovement : MonoBehaviour
         colliderInformations["Key"] = new ColliderInformation(canPickup:true, character:Characters.Key);
         colliderInformations["MouseAcquire"] = new ColliderInformation(canPickup: true, character:Characters.Mouse);
         colliderInformations["BatAcquire"] = new ColliderInformation(canPickup: true, character: Characters.Bat);
-        colliderInformations["Pumpkin"] = new ColliderInformation(canInteract: true, character: Characters.Cat);
+        colliderInformations["Pumpkin"] = new ColliderInformation(canInteract: true, character: Characters.Cat, targetSceneName:"PumpkinGame");
 
         unlockedCharacters = new HashSet<Characters>();
         unlockedCharacters.Add(Characters.Cat);
@@ -193,6 +194,12 @@ public class playerMovement : MonoBehaviour
                     inventory.Add(information.Character);
                 }
             }
+
+            // change scene
+            if (interacting && information.CanInteract)
+            {
+                SceneManager.LoadScene(information.TargetSceneName);
+            }
         }
 
         if(goingToCollide && movingTowardsCollision && raysCollided && stopMovement && inWall)
@@ -298,6 +305,7 @@ public class playerMovement : MonoBehaviour
         private bool canBreak;
         private bool canInteract;
         private Characters character;
+        private string targetSceneName;
 
         // Public Fields
         public bool StopMovement { get { return stopMovement; } }
@@ -305,14 +313,16 @@ public class playerMovement : MonoBehaviour
         public bool CanBreak { get { return canBreak; } }
         public bool CanInteract { get { return canInteract; } }
         public Characters Character { get { return character; } }
+        public string TargetSceneName { get { return targetSceneName; } }
 
-        public ColliderInformation(bool stopMovement = false, bool canPickup = false, bool canBreak = false, bool canInteract = false, Characters character = Characters.All)
+        public ColliderInformation(bool stopMovement = false, bool canPickup = false, bool canBreak = false, bool canInteract = false, Characters character = Characters.All, string targetSceneName="")
         {
             this.stopMovement = stopMovement;
             this.canPickup = canPickup;
             this.canBreak = canBreak;
             this.canInteract = canInteract;
             this.character = character;
+            this.targetSceneName = targetSceneName;
         }
     }
 }

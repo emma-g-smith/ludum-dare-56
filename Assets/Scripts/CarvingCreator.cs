@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Tilemaps;
+using UnityEngine.UI;
 
 public class CarvingCreator : MonoBehaviour
 {
@@ -11,9 +12,21 @@ public class CarvingCreator : MonoBehaviour
 
     [SerializeField] private Camera _camera;
 
+    [SerializeField] private Button button;
+
+    [SerializeField] private int carvingMinimum = 20;
+
+    private int carvingsMade;
+
     private Vector2 mousePos;
     private Vector3Int currentGridPosition;
     private Vector3Int lastGridPosition;
+
+    private void Start()
+    {
+        carvingsMade = 0;
+        button.gameObject.SetActive(false);
+    }
 
     private void Update()
     {
@@ -34,6 +47,11 @@ public class CarvingCreator : MonoBehaviour
         {
             HandleDrawing();
         }
+
+        if (carvingsMade > carvingMinimum)
+        {
+            button.gameObject.SetActive(true);
+        }
     }
 
     private void UpdatePreview()
@@ -49,6 +67,12 @@ public class CarvingCreator : MonoBehaviour
 
     private void DrawItem()
     {
+        TileBase current_tile = carvingMap.GetTile(currentGridPosition);
+        if(current_tile != carving.GetTileBase)
+        {
+            carvingsMade += 1;
+        }
+
         carvingMap.SetTile(currentGridPosition, carving.GetTileBase);
     }
 
