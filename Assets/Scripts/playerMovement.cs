@@ -10,7 +10,9 @@ public class playerMovement : MonoBehaviour
     [SerializeField] private float interactionRadius = 2f;
     [SerializeField] private int layerMask = 0;
     [SerializeField] private float distance = 5f;
-
+    [SerializeField] private Animator catAnimator;
+    [SerializeField] private Animator mouseAnimator;
+    [SerializeField] private Animator batAnimator;
 
     private Dictionary<Characters, CharacterInformation> charachterInformations;
     private Dictionary<string, ColliderInformation> colliderInformations;
@@ -18,6 +20,7 @@ public class playerMovement : MonoBehaviour
     private HashSet<Characters> playableCharacters;
     private HashSet<Characters> inventory;
     private Characters currentCharacter;
+    private bool wasInteracting;
 
     private enum Characters
     {
@@ -64,6 +67,8 @@ public class playerMovement : MonoBehaviour
 
         RaycastHit2D interactionHitInformation = Physics2D.BoxCast(transform.position, new Vector2(interactionRadius, interactionRadius), 0, Vector2.zero);
         swapCharacter(currentCharacter, interactionHitInformation);
+
+        wasInteracting = false;
     }
 
     // Update is called once per frame
@@ -78,6 +83,8 @@ public class playerMovement : MonoBehaviour
         movementControl(interactionHitInformation);
 
         characterControl(interactionHitInformation);
+
+        wasInteracting = catAnimator.GetCurrentAnimatorStateInfo(0).IsName("cat_claw");
     }
 
     private void movementControl(RaycastHit2D interactionHitInformation)
@@ -129,11 +136,26 @@ public class playerMovement : MonoBehaviour
         
         moveVector = calculatedMoveVector;
 
+        //flip animation based on direction
+        if (moveVector.x > 0)
+        {
+            charachterInformations[currentCharacter].Image.transform.localRotation = Quaternion.Euler(0, 180, 0);
+        }
+        if (moveVector.x < 0)
+        {
+            charachterInformations[currentCharacter].Image.transform.localRotation = Quaternion.Euler(0, 0, 0);
+        }
+
+        catAnimator.SetBool("IsMoving", moveVector.magnitude != 0);
+        catAnimator.SetBool("IsInteracting", interacting);
+
         transform.position += moveVector;
     }
 
     private Vector3 moveCalculations(Vector3 potentialMove, RaycastHit2D interactionHitInformation, bool interacting)
     {
+        interacting = wasInteracting && !catAnimator.GetCurrentAnimatorStateInfo(0).IsName("cat_claw");
+
         float bigBoxSize = 1f;
         float smallBoxSize = 0.9f;
 
