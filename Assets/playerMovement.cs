@@ -104,16 +104,43 @@ public class playerMovement : MonoBehaviour
             interacting = true;
         }
 
+        moveVector = moveVector.normalized * Time.deltaTime * movementSpeed;
+
+        Vector3 calculatedMoveVector = moveCalculations(moveVector, interactionHitInformation, interacting);
+
+        // if the move is diagonal and cannot make move, see if individual x adn y moves work
+        if(moveVector.x != 0 && moveVector.y != 0)
+        {
+            // only do extra calculation if move has been cut
+            if (calculatedMoveVector != moveVector)
+            {
+                Vector3 xMove = new Vector3(moveVector.x, 0, 0);
+                Vector3 yMove = new Vector3(0, moveVector.y, 0);
+
+                xMove = moveCalculations(xMove, interactionHitInformation, interacting);
+                yMove = moveCalculations(yMove, interactionHitInformation, interacting);
+
+                calculatedMoveVector.x = xMove.x;
+                calculatedMoveVector.y = yMove.y;
+            }
+        }
+        
+        moveVector = calculatedMoveVector;
+
+        transform.position += moveVector;
+    }
+
+    private Vector3 moveCalculations(Vector3 potentialMove, RaycastHit2D interactionHitInformation, bool interacting)
+    {
         float bigBoxSize = 1f;
         float smallBoxSize = 0.9f;
 
-        moveVector = moveVector.normalized * Time.deltaTime * movementSpeed;
-        RaycastHit2D bigHitInformation = Physics2D.BoxCast(transform.position, new Vector2(bigBoxSize, bigBoxSize), 0, moveVector);
-        RaycastHit2D smallHitInformation = Physics2D.BoxCast(transform.position, new Vector2(smallBoxSize, smallBoxSize), 0, moveVector);
+        RaycastHit2D bigHitInformation = Physics2D.BoxCast(transform.position, new Vector2(bigBoxSize, bigBoxSize), 0, potentialMove);
+        RaycastHit2D smallHitInformation = Physics2D.BoxCast(transform.position, new Vector2(smallBoxSize, smallBoxSize), 0, potentialMove);
 
-        RaycastHit2D test = Physics2D.BoxCast(transform.position, new Vector2(smallBoxSize, smallBoxSize), 0, moveVector, distance, layerMask);
+        RaycastHit2D test = Physics2D.BoxCast(transform.position, new Vector2(smallBoxSize, smallBoxSize), 0, potentialMove, distance, layerMask);
 
-        bool goingToCollide = moveVector.magnitude > bigHitInformation.distance;
+        bool goingToCollide = potentialMove.magnitude > bigHitInformation.distance;
         bool movingTowardsCollision = smallHitInformation.distance - bigHitInformation.distance < (bigBoxSize - smallBoxSize) / 2;
         bool inWall = true;
         bool raysCollided = bigHitInformation.collider != null && smallHitInformation.collider != null;
@@ -146,7 +173,7 @@ public class playerMovement : MonoBehaviour
             {
                 stopMovement = information.StopMovement;
             }
-                        
+
             // break block
             if (interacting && information.CanBreak && (currentCharacter == information.Character || inventory.Contains(information.Character)))
             {
@@ -158,7 +185,7 @@ public class playerMovement : MonoBehaviour
             {
                 bigHitInformation.collider.gameObject.SetActive(false);
                 if (playableCharacters.Contains(information.Character))
-                { 
+                {
                     unlockedCharacters.Add(information.Character);
                 }
                 else
@@ -168,14 +195,14 @@ public class playerMovement : MonoBehaviour
             }
         }
 
-        Debug.Log(new Tuple<bool, bool, bool, bool>(goingToCollide, movingTowardsCollision, raysCollided, stopMovement));
-
-        if (goingToCollide && movingTowardsCollision && raysCollided && stopMovement && inWall)
+        if(goingToCollide && movingTowardsCollision && raysCollided && stopMovement && inWall)
         {
-            moveVector = moveVector / moveVector.magnitude * bigHitInformation.distance;
+            return potentialMove / potentialMove.magnitude * bigHitInformation.distance;
         }
-
-        transform.position += moveVector;
+        else
+        {
+            return potentialMove;
+        }
     }
 
     private void characterControl(RaycastHit2D interactionHitInformation)
