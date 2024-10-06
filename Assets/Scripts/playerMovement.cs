@@ -14,10 +14,11 @@ public class playerMovement : MonoBehaviour
     [SerializeField] private Animator mouseAnimator;
     [SerializeField] private Animator batAnimator;
 
-    // Destroy after value testing
     [SerializeField] private float catSize = 1.2f;
     [SerializeField] private float mouseSize = 0.6f;
     [SerializeField] private float batSize= 0.8f;
+
+    //[SerializeField] private Camera camera;
 
     private Dictionary<Characters, CharacterInformation> charachterInformations;
     private Dictionary<Characters, Animator> charachterAnimators;
@@ -173,7 +174,6 @@ public class playerMovement : MonoBehaviour
 
         transform.position += moveVector;
     }
-
     private Vector3 moveCalculations(Vector3 potentialMove, RaycastHit2D interactionHitInformation, bool interacting)
     {
         float bigBoxSize = charachterInformations[currentCharacter].HitBoxScale;
@@ -271,7 +271,6 @@ public class playerMovement : MonoBehaviour
             swapCharacter(Characters.Bat, interactionHitInformation);
         }
     }
-
     private void swapCharacter(Characters targetCharacter, RaycastHit2D interactionHitInformation)
     {
         bool changeCharacter = true;
@@ -315,6 +314,16 @@ public class playerMovement : MonoBehaviour
         
     }
 
+    private void cameraControl()
+    {
+        if (transform.position.x > 5)
+        {
+            Camera.main.transform.position = Vector3.Lerp(Camera.main.transform.position, new Vector3(5, -10, -10), 5 * Time.deltaTime);
+        }
+
+        //Camera.main.transform.position = new Vector3(transform.position.x, transform.position.y, -10);
+    }
+
     private class CharacterInformation
     {
         // Variables
@@ -340,8 +349,6 @@ public class playerMovement : MonoBehaviour
             this.image = GameObject.Find(imageObjectName);
         }
     }
-
-
     private class ColliderInformation
     {
         // Variables
