@@ -18,15 +18,19 @@ public class playerMovement : MonoBehaviour
     [SerializeField] private float mouseSize = 0.6f;
     [SerializeField] private float batSize= 0.8f;
 
+    [SerializeField] private float cameraSpeed = 5f;
+
     //[SerializeField] private Camera camera;
 
     private Dictionary<Characters, CharacterInformation> charachterInformations;
     private Dictionary<Characters, Animator> charachterAnimators;
+    private Dictionary<Scenes, CameraInformation> cameraPresets;
     private Dictionary<string, ColliderInformation> colliderInformations;
     private HashSet<Characters> unlockedCharacters;
     private HashSet<Characters> playableCharacters;
     private HashSet<Characters> inventory;
     private Characters currentCharacter;
+    private Scenes currentScene;
     private bool wasInteracting;
 
     private enum Characters
@@ -37,6 +41,21 @@ public class playerMovement : MonoBehaviour
         Key,
         None,
         All
+    }
+
+    private enum Scenes
+    {
+        Inside,
+        House,
+        Maze,
+        Tree,
+        Garden
+    }
+
+    private enum SceneTransitions
+    {
+        Cut,
+        Pan
     }
 
 
@@ -53,6 +72,13 @@ public class playerMovement : MonoBehaviour
         charachterAnimators[Characters.Mouse] = mouseAnimator;
         charachterAnimators[Characters.Bat] = batAnimator;
 
+        cameraPresets = new Dictionary<Scenes, CameraInformation>();
+        cameraPresets[Scenes.Inside] = new CameraInformation(16, -16, 18, 9, SceneTransitions.Cut, new List<Scenes> { Scenes.House });
+        cameraPresets[Scenes.House] = new CameraInformation(16, -16, 9, -9, SceneTransitions.Pan, new List<Scenes> { Scenes.Maze, Scenes.Garden });
+        cameraPresets[Scenes.Maze] = new CameraInformation(-16, -48, 9, -9, SceneTransitions.Pan, new List<Scenes> { Scenes.House, Scenes.Tree });
+        cameraPresets[Scenes.Tree] = new CameraInformation(-48, -80, 17.5f, -0.5f, SceneTransitions.Pan, new List<Scenes> { Scenes.Maze });
+        cameraPresets[Scenes.Garden] = new CameraInformation(46.8f, 14.8f, 5, -13, SceneTransitions.Pan, new List<Scenes> { Scenes.House });
+
         colliderInformations = new Dictionary<string, ColliderInformation>();
         colliderInformations["Wall"] = new ColliderInformation(stopMovement:true);
         colliderInformations["Water"] = new ColliderInformation(stopMovement:true, character:Characters.Bat);
@@ -66,6 +92,8 @@ public class playerMovement : MonoBehaviour
 
         unlockedCharacters = new HashSet<Characters>();
         unlockedCharacters.Add(Characters.Cat);
+        unlockedCharacters.Add(Characters.Mouse);
+        unlockedCharacters.Add(Characters.Bat);
 
         playableCharacters = new HashSet<Characters>();
         playableCharacters.Add(Characters.Cat);
@@ -75,6 +103,8 @@ public class playerMovement : MonoBehaviour
         inventory = new HashSet<Characters>();
 
         currentCharacter = Characters.Cat;
+
+        currentScene = Scenes.House;
 
         swapCharacter(currentCharacter, getInteraction());
 
@@ -89,6 +119,8 @@ public class playerMovement : MonoBehaviour
         movementControl(interactionHitInformation);
 
         characterControl(interactionHitInformation);
+
+        cameraControl();
 
         // only have custom interaction code if cat
         if (currentCharacter == Characters.Cat)
@@ -316,12 +348,33 @@ public class playerMovement : MonoBehaviour
 
     private void cameraControl()
     {
-        if (transform.position.x > 5)
+        CameraInformation information = cameraPresets[currentScene];
+        
+        // see if scene needs to be changed
+        if (!characterInScene(currentScene))
         {
-            Camera.main.transform.position = Vector3.Lerp(Camera.main.transform.position, new Vector3(5, -10, -10), 5 * Time.deltaTime);
+            foreach (Scenes scene in information.Neighbors)
+            {
+                if(characterInScene(scene))
+                {
+                    currentScene = scene;
+                    break;
+                }
+            }
         }
 
-        //Camera.main.transform.position = new Vector3(transform.position.x, transform.position.y, -10);
+        // move camera towards correct position for scene
+        Camera.main.transform.position = Vector3.Lerp(Camera.main.transform.position, information.CameraTarget, cameraSpeed * Time.deltaTime);
+    }
+
+    private bool characterInScene(Scenes scene)
+    {
+        CameraInformation information = cameraPresets[scene];
+
+        float x_value = transform.position.x;
+        float y_value = transform.position.y;
+
+        return x_value > information.LeftBound && x_value < information.RightBound && y_value > information.BottomBound && y_value < information.TopBound;
     }
 
     private class CharacterInformation
@@ -377,4 +430,35 @@ public class playerMovement : MonoBehaviour
             this.targetSceneName = targetSceneName;
         }
     }
+    private class CameraInformation
+    {
+        private float rightBound;
+        private float leftBound;
+        private float topBound;
+        private float bottomBound;
+        private SceneTransitions transition;
+        private List<Scenes> neighbors;
+        private Vector3 cameraTarget;
+
+        public float RightBound { get { return rightBound; } }
+        public float LeftBound { get { return leftBound; } }
+        public float TopBound { get { return topBound; } }
+        public float BottomBound { get { return bottomBound; } }
+        public SceneTransitions Transition { get { return transition; } }
+        public List<Scenes> Neighbors { get { return neighbors; } }
+        public Vector3 CameraTarget { get { return cameraTarget; } }
+
+        public CameraInformation(float rightBound, float leftBound, float topBound, float bottomBound, SceneTransitions transition, List<Scenes> neighbors)
+        {
+            this.rightBound = rightBound;
+            this.leftBound = leftBound;
+            this.topBound = topBound;
+            this.bottomBound = bottomBound;
+            this.transition = transition;
+            this.neighbors = neighbors;
+
+            this.cameraTarget = new Vector3((rightBound + leftBound) / 2, (topBound + bottomBound) / 2, Camera.main.transform.position.z);
+        }
+    }
+
 }
