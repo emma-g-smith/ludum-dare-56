@@ -12,6 +12,7 @@ TagManager:
   - MouseAcquire
   - BatAcquire
   - Door
+  - Pumpkin
   layers:
   - Default
   - TransparentFX

@@ -46,6 +46,7 @@ public class playerMovement : MonoBehaviour
         colliderInformations["Key"] = new ColliderInformation(canPickup:true, character:Characters.Key);
         colliderInformations["MouseAcquire"] = new ColliderInformation(canPickup: true, character:Characters.Mouse);
         colliderInformations["BatAcquire"] = new ColliderInformation(canPickup: true, character: Characters.Bat);
+        colliderInformations["Pumpkin"] = new ColliderInformation(canInteract: true, character: Characters.Cat);
 
         unlockedCharacters = new HashSet<Characters>();
         unlockedCharacters.Add(Characters.Cat);
@@ -66,8 +67,8 @@ public class playerMovement : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        // Make it so characters can't be changed in bad places.
         // Add sliding on walls so movement feels nicer <- do a raycast in each direction, and alter the movement vector accordingly to where you can go
+        // Get rid of small cap in corner collision
         // Need pumpkin minigame and pumpkin block
 
         RaycastHit2D interactionHitInformation = Physics2D.BoxCast(transform.position, new Vector2(interactionRadius, interactionRadius), 0, Vector2.zero);
@@ -113,7 +114,7 @@ public class playerMovement : MonoBehaviour
         RaycastHit2D test = Physics2D.BoxCast(transform.position, new Vector2(smallBoxSize, smallBoxSize), 0, moveVector, distance, layerMask);
 
         bool goingToCollide = moveVector.magnitude > bigHitInformation.distance;
-        bool movingTowardsCollision = smallHitInformation.distance - bigHitInformation.distance < bigBoxSize - smallBoxSize;
+        bool movingTowardsCollision = smallHitInformation.distance - bigHitInformation.distance < (bigBoxSize - smallBoxSize) / 2;
         bool inWall = true;
         bool raysCollided = bigHitInformation.collider != null && smallHitInformation.collider != null;
         bool stopMovement = false;
@@ -166,6 +167,8 @@ public class playerMovement : MonoBehaviour
                 }
             }
         }
+
+        Debug.Log(new Tuple<bool, bool, bool, bool>(goingToCollide, movingTowardsCollision, raysCollided, stopMovement));
 
         if (goingToCollide && movingTowardsCollision && raysCollided && stopMovement && inWall)
         {
@@ -266,19 +269,22 @@ public class playerMovement : MonoBehaviour
         private bool stopMovement;
         private bool canPickup;
         private bool canBreak;
+        private bool canInteract;
         private Characters character;
 
         // Public Fields
         public bool StopMovement { get { return stopMovement; } }
         public bool CanPickup { get { return canPickup; } }
         public bool CanBreak { get { return canBreak; } }
+        public bool CanInteract { get { return canInteract; } }
         public Characters Character { get { return character; } }
 
-        public ColliderInformation(bool stopMovement = false, bool canPickup = false, bool canBreak = false, Characters character = Characters.All)
+        public ColliderInformation(bool stopMovement = false, bool canPickup = false, bool canBreak = false, bool canInteract = false, Characters character = Characters.All)
         {
             this.stopMovement = stopMovement;
             this.canPickup = canPickup;
             this.canBreak = canBreak;
+            this.canInteract = canInteract;
             this.character = character;
         }
     }
