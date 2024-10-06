@@ -11,6 +11,7 @@ public class playerMovement : MonoBehaviour
     [SerializeField] private int layerMask = 0;
     [SerializeField] private float distance = 5f;
 
+
     private Dictionary<Characters, CharacterInformation> charachterInformations;
     private Dictionary<string, ColliderInformation> colliderInformations;
     private HashSet<Characters> unlockedCharacters;
