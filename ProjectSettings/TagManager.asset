@@ -17,6 +17,9 @@ TagManager:
   - HouseInside
   - CaveOutside
   - CaveInside
+  - Bones
+  - BonesOutside
+  - BonesInside
   layers:
   - Default
   - TransparentFX

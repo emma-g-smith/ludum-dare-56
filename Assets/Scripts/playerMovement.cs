@@ -233,8 +233,6 @@ public class playerMovement : MonoBehaviour
             // only do extra calculation if move has been cut
             if (calculatedMoveVector != potentialMove)
             {
-                Debug.Log("Here");
-
                 Vector3 xMove = new Vector3(potentialMove.x, 0, 0);
                 Vector3 yMove = new Vector3(0, potentialMove.y, 0);
 
