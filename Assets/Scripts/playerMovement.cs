@@ -20,8 +20,6 @@ public class playerMovement : MonoBehaviour
 
     [SerializeField] private float cameraSpeed = 5f;
 
-    //[SerializeField] private Camera camera;
-
     private Dictionary<Characters, CharacterInformation> charachterInformations;
     private Dictionary<Characters, Animator> charachterAnimators;
     private Dictionary<Scenes, CameraInformation> cameraPresets;
@@ -32,6 +30,7 @@ public class playerMovement : MonoBehaviour
     private Characters currentCharacter;
     private Scenes currentScene;
     private bool wasInteracting;
+    private bool justTeleported;
 
     private enum Characters
     {
@@ -73,8 +72,8 @@ public class playerMovement : MonoBehaviour
         charachterAnimators[Characters.Bat] = batAnimator;
 
         cameraPresets = new Dictionary<Scenes, CameraInformation>();
-        cameraPresets[Scenes.Inside] = new CameraInformation(16, -16, 18, 9, SceneTransitions.Cut, new List<Scenes> { Scenes.House });
-        cameraPresets[Scenes.House] = new CameraInformation(16, -16, 9, -9, SceneTransitions.Pan, new List<Scenes> { Scenes.Maze, Scenes.Garden });
+        cameraPresets[Scenes.Inside] = new CameraInformation(16, -16, 27, 9, SceneTransitions.Cut, new List<Scenes> { Scenes.House });
+        cameraPresets[Scenes.House] = new CameraInformation(16, -16, 9, -9, SceneTransitions.Pan, new List<Scenes> { Scenes.Maze, Scenes.Garden, Scenes.Inside });
         cameraPresets[Scenes.Maze] = new CameraInformation(-16, -48, 9, -9, SceneTransitions.Pan, new List<Scenes> { Scenes.House, Scenes.Tree });
         cameraPresets[Scenes.Tree] = new CameraInformation(-48, -80, 17.5f, -0.5f, SceneTransitions.Pan, new List<Scenes> { Scenes.Maze });
         cameraPresets[Scenes.Garden] = new CameraInformation(46.8f, 14.8f, 5, -13, SceneTransitions.Pan, new List<Scenes> { Scenes.House });
@@ -89,6 +88,10 @@ public class playerMovement : MonoBehaviour
         colliderInformations["MouseAcquire"] = new ColliderInformation(canPickup: true, character:Characters.Mouse);
         colliderInformations["BatAcquire"] = new ColliderInformation(canPickup: true, character: Characters.Bat);
         colliderInformations["Pumpkin"] = new ColliderInformation(canInteract: true, character: Characters.Cat, targetSceneName:"PumpkinGame");
+        colliderInformations["HouseOutside"] = new ColliderInformation(canTeleport: true, teleportName:"TeleporterHouseInside");
+        colliderInformations["HouseInside"] = new ColliderInformation(canTeleport: true, teleportName: "TeleporterHouseOutside");
+        colliderInformations["CaveOutside"] = new ColliderInformation(canTeleport: true, teleportName: "PumpkinGame");
+        colliderInformations["CaveInside"] = new ColliderInformation(canTeleport: true, teleportName: "PumpkinGame");
 
         unlockedCharacters = new HashSet<Characters>();
         unlockedCharacters.Add(Characters.Cat);
@@ -109,6 +112,7 @@ public class playerMovement : MonoBehaviour
         swapCharacter(currentCharacter, getInteraction());
 
         wasInteracting = false;
+        justTeleported = false;
     }
 
     // Update is called once per frame
@@ -269,6 +273,21 @@ public class playerMovement : MonoBehaviour
                 }
             }
 
+            // teleport
+            if (interactionHitInformation.collider != null)
+            {
+                ColliderInformation interactionInformation = colliderInformations[interactionHitInformation.collider.tag];
+
+                if (interacting && interactionInformation.CanTeleport)
+                {
+                    Vector3 targetPosition = GameObject.Find(interactionInformation.TeleportName).transform.position;
+                    targetPosition.z = transform.position.z;
+
+                    transform.position = targetPosition;
+                    justTeleported = true;
+                }
+            }
+            
             // change scene
             if (interacting && information.CanInteract)
             {
@@ -363,8 +382,18 @@ public class playerMovement : MonoBehaviour
             }
         }
 
-        // move camera towards correct position for scene
-        Camera.main.transform.position = Vector3.Lerp(Camera.main.transform.position, information.CameraTarget, cameraSpeed * Time.deltaTime);
+        information = cameraPresets[currentScene];
+
+        // move camera towards correct position for scene if pan and jump cut if not
+        if (justTeleported)
+        {
+            Camera.main.transform.position = information.CameraTarget;
+            justTeleported = false;
+        }
+        else
+        {
+            Camera.main.transform.position = Vector3.Lerp(Camera.main.transform.position, information.CameraTarget, cameraSpeed * Time.deltaTime);
+        }
     }
 
     private bool characterInScene(Scenes scene)
@@ -409,25 +438,31 @@ public class playerMovement : MonoBehaviour
         private bool canPickup;
         private bool canBreak;
         private bool canInteract;
+        private bool canTeleport;
         private Characters character;
         private string targetSceneName;
+        private string teleportName;
 
         // Public Fields
         public bool StopMovement { get { return stopMovement; } }
         public bool CanPickup { get { return canPickup; } }
         public bool CanBreak { get { return canBreak; } }
         public bool CanInteract { get { return canInteract; } }
+        public bool CanTeleport { get { return canTeleport; } }
         public Characters Character { get { return character; } }
         public string TargetSceneName { get { return targetSceneName; } }
+        public string TeleportName { get { return teleportName; } }
 
-        public ColliderInformation(bool stopMovement = false, bool canPickup = false, bool canBreak = false, bool canInteract = false, Characters character = Characters.All, string targetSceneName="")
+        public ColliderInformation(bool stopMovement = false, bool canPickup = false, bool canBreak = false, bool canInteract = false, bool canTeleport = false, Characters character = Characters.All, string targetSceneName="", string teleportName = "")
         {
             this.stopMovement = stopMovement;
             this.canPickup = canPickup;
             this.canBreak = canBreak;
             this.canInteract = canInteract;
+            this.canTeleport = canTeleport;
             this.character = character;
             this.targetSceneName = targetSceneName;
+            this.teleportName = teleportName;
         }
     }
     private class CameraInformation
