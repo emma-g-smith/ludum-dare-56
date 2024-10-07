@@ -21,11 +21,11 @@ TagManager:
   - Default
   - TransparentFX
   - Ignore Raycast
-  - Top
+  - Always Wall
   - Water
   - UI
-  - Middle
-  - Bottom
+  - Sometimes Wall
+  - Never Wall
   - 
   - 
   - 

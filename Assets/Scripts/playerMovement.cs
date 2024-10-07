@@ -9,7 +9,7 @@ public class playerMovement : MonoBehaviour
     [SerializeField] private float movementSpeed = 1f;
     [SerializeField] private float interactionRadius = 2f;
     [SerializeField] private int layerMask = 0;
-    [SerializeField] private float distance = 5f;
+    [SerializeField] private float raycastDistance = 5f;
     [SerializeField] private Animator catAnimator;
     [SerializeField] private Animator mouseAnimator;
     [SerializeField] private Animator batAnimator;
@@ -59,6 +59,13 @@ public class playerMovement : MonoBehaviour
         CaveOutside,
         CaveInside,
         BoneRoom,
+    }
+
+    private enum Layers
+    {
+        AlwaysWall = 1 << 3,
+        SometimesWall = 1 << 6,
+        Neverwall = 1 << 7,
     }
 
 
@@ -115,7 +122,7 @@ public class playerMovement : MonoBehaviour
 
         currentScene = Scenes.House;
 
-        swapCharacter(currentCharacter, getInteraction());
+        swapCharacter(currentCharacter);
 
         wasInteracting = false;
         justTeleported = false;
@@ -139,11 +146,9 @@ public class playerMovement : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        RaycastHit2D interactionHitInformation = getInteraction();
+        movementControl();
 
-        movementControl(interactionHitInformation);
-
-        characterControl(interactionHitInformation);
+        characterControl();
 
         cameraControl();
 
@@ -154,13 +159,7 @@ public class playerMovement : MonoBehaviour
         }
     }
 
-    private RaycastHit2D getInteraction()
-    {
-        float hitBoxScale = charachterInformations[currentCharacter].HitBoxScale;
-        return Physics2D.BoxCast(transform.position, new Vector2(interactionRadius * hitBoxScale, interactionRadius * hitBoxScale), 0, Vector2.zero);
-    }
-
-    private void movementControl(RaycastHit2D interactionHitInformation)
+    private void movementControl()
     {
         Vector3 moveVector = new Vector3(0, 0);
         bool interacting = false;
@@ -196,26 +195,14 @@ public class playerMovement : MonoBehaviour
 
         moveVector = moveVector.normalized * Time.deltaTime * movementSpeed;
 
-        Vector3 calculatedMoveVector = moveCalculations(moveVector, interactionHitInformation, interacting);
+        Vector3 wallMove = findGreatestPossibleMove(moveVector, Layers.AlwaysWall);
+        Vector3 permiableMove = findGreatestPossibleMove(moveVector, Layers.SometimesWall);
 
-        // if the move is diagonal and cannot make move, see if individual x adn y moves work
-        if(moveVector.x != 0 && moveVector.y != 0)
-        {
-            // only do extra calculation if move has been cut
-            if (calculatedMoveVector != moveVector)
-            {
-                Vector3 xMove = new Vector3(moveVector.x, 0, 0);
-                Vector3 yMove = new Vector3(0, moveVector.y, 0);
+        float signX = Math.Sign(moveVector.x);
+        float signY = Math.Sign(moveVector.y);
 
-                xMove = moveCalculations(xMove, interactionHitInformation, interacting);
-                yMove = moveCalculations(yMove, interactionHitInformation, interacting);
-
-                calculatedMoveVector.x = xMove.x;
-                calculatedMoveVector.y = yMove.y;
-            }
-        }
-        
-        moveVector = calculatedMoveVector;
+        moveVector.x = signX * Math.Min(Math.Abs(wallMove.x), Math.Abs(permiableMove.x));
+        moveVector.y = signY * Math.Min(Math.Abs(wallMove.y), Math.Abs(permiableMove.y));
 
         //flip animation based on direction - this might not work when switching characters. Maybe solution is to flip us and not the images
         if (moveVector.x > 0)
@@ -229,39 +216,52 @@ public class playerMovement : MonoBehaviour
 
         charachterAnimators[currentCharacter].SetBool("IsMoving", moveVector.magnitude != 0);
 
+        interact(interacting, Layers.AlwaysWall);
+        interact(interacting, Layers.Neverwall);
+
         transform.position += moveVector;
     }
-    private Vector3 moveCalculations(Vector3 potentialMove, RaycastHit2D interactionHitInformation, bool interacting)
+
+
+    private Vector3 findGreatestPossibleMove(Vector3 potentialMove, Layers layer)
     {
+        Vector3 calculatedMoveVector = moveCalculations(potentialMove, layer);
+
+        // if the move is diagonal and cannot make move, see if individual x adn y moves work
+        if (potentialMove.x != 0 && potentialMove.y != 0)
+        {
+            // only do extra calculation if move has been cut
+            if (calculatedMoveVector != potentialMove)
+            {
+                Vector3 xMove = new Vector3(potentialMove.x, 0, 0);
+                Vector3 yMove = new Vector3(0, potentialMove.y, 0);
+
+                xMove = moveCalculations(xMove, layer);
+                yMove = moveCalculations(yMove, layer);
+
+                calculatedMoveVector.x = xMove.x;
+                calculatedMoveVector.y = yMove.y;
+            }
+        }
+
+        return calculatedMoveVector;
+    }
+    private Vector3 moveCalculations(Vector3 potentialMove, Layers layer) //RaycastHit2D interactionHitInformation, bool interacting)
+    {       
+        // BoxCast only for colliders on the specified layer according to hitbox
         float bigBoxSize = charachterInformations[currentCharacter].HitBoxScale;
         float smallBoxSize = bigBoxSize * 0.9f;
 
-        RaycastHit2D bigHitInformation = Physics2D.BoxCast(transform.position, new Vector2(bigBoxSize, bigBoxSize), 0, potentialMove);
-        RaycastHit2D smallHitInformation = Physics2D.BoxCast(transform.position, new Vector2(smallBoxSize, smallBoxSize), 0, potentialMove);
+        RaycastHit2D bigHitInformation = Physics2D.BoxCast(transform.position, new Vector2(bigBoxSize, bigBoxSize), 0, potentialMove, raycastDistance, (int)layer);
+        RaycastHit2D smallHitInformation = Physics2D.BoxCast(transform.position, new Vector2(smallBoxSize, smallBoxSize), 0, potentialMove, raycastDistance, (int)layer);
 
-        RaycastHit2D test = Physics2D.BoxCast(transform.position, new Vector2(smallBoxSize, smallBoxSize), 0, potentialMove, distance, layerMask);
+        //RaycastHit2D test = Physics2D.BoxCast(transform.position, new Vector2(smallBoxSize, smallBoxSize), 0, potentialMove, raycastDistance, layerMask);
 
         bool goingToCollide = potentialMove.magnitude > bigHitInformation.distance;
         bool movingTowardsCollision = smallHitInformation.distance - bigHitInformation.distance < (bigBoxSize - smallBoxSize) / 2;
-        bool inWall = true;
         bool raysCollided = bigHitInformation.collider != null && smallHitInformation.collider != null;
         bool stopMovement = false;
 
-        // check if thing being interacted with is in the interaction radius
-        interacting &= interactionHitInformation.collider != null;
-
-        // Correcting for in wall edge case behavior
-        if (bigHitInformation.collider != null && smallHitInformation.collider != null)
-        {
-            ColliderInformation bigInformation = colliderInformations[bigHitInformation.collider.tag];
-            ColliderInformation smallInformation = colliderInformations[smallHitInformation.collider.tag];
-
-            bool bigNoMove = bigInformation.StopMovement && currentCharacter != bigInformation.Character && bigHitInformation.distance == 0;
-            bool smallCanMove = !(smallInformation.StopMovement && currentCharacter != smallInformation.Character) && smallHitInformation.distance == 0;
-            bool movingAwayFromWall = test.collider == null;
-
-            inWall = !(bigNoMove && smallCanMove && movingAwayFromWall);
-        }
 
         // only stop movement for specific cases
         if (bigHitInformation.collider != null)
@@ -273,11 +273,31 @@ public class playerMovement : MonoBehaviour
             {
                 stopMovement = information.StopMovement;
             }
+        }
 
-            // break block
+        if(goingToCollide && movingTowardsCollision && raysCollided && stopMovement)
+        {
+            return potentialMove / potentialMove.magnitude * bigHitInformation.distance;
+        }
+        else
+        {
+            return potentialMove;
+        }
+    }
+    private void interact(bool interacting, Layers layer)
+    {
+        float hitBoxScale = charachterInformations[currentCharacter].HitBoxScale;
+        RaycastHit2D interactionHitInformation = Physics2D.BoxCast(transform.position, new Vector2(interactionRadius * hitBoxScale, interactionRadius * hitBoxScale), 0, Vector2.zero, raycastDistance, (int) layer);
+        
+        // only interact with things if this hits something
+        if (interactionHitInformation.collider != null)
+        {
+            ColliderInformation information = colliderInformations[interactionHitInformation.collider.tag];
+
+            // block break
             if (interacting && information.CanBreak && (currentCharacter == information.Character || inventory.Contains(information.Character)))
             {
-                if (bigHitInformation.collider.tag == "Vine")
+                if (interactionHitInformation.collider.tag == "Vine")
                 {
                     vinesImage.sprite = vinesCutImage;
                     vineCollider.enabled = false;
@@ -285,14 +305,14 @@ public class playerMovement : MonoBehaviour
                 }
                 else
                 {
-                    bigHitInformation.collider.gameObject.SetActive(false);
+                    interactionHitInformation.collider.gameObject.SetActive(false);
                 }
             }
 
             // pick up
             if (interacting && information.CanPickup)
             {
-                bigHitInformation.collider.gameObject.SetActive(false);
+                interactionHitInformation.collider.gameObject.SetActive(false);
                 if (playableCharacters.Contains(information.Character))
                 {
                     unlockedCharacters.Add(information.Character);
@@ -304,20 +324,15 @@ public class playerMovement : MonoBehaviour
             }
 
             // teleport
-            if (interactionHitInformation.collider != null)
+            if (interacting && information.CanTeleport)
             {
-                ColliderInformation interactionInformation = colliderInformations[interactionHitInformation.collider.tag];
+                Vector3 targetPosition = GameObject.Find(information.TeleportName).transform.position;
+                targetPosition.z = transform.position.z;
 
-                if (interacting && interactionInformation.CanTeleport)
-                {
-                    Vector3 targetPosition = GameObject.Find(interactionInformation.TeleportName).transform.position;
-                    targetPosition.z = transform.position.z;
-
-                    transform.position = targetPosition;
-                    justTeleported = true;
-                }
+                transform.position = targetPosition;
+                justTeleported = true;
             }
-            
+
             // change scene
             if (interacting && information.CanInteract)
             {
@@ -325,52 +340,59 @@ public class playerMovement : MonoBehaviour
                 SceneManager.LoadScene(information.TargetSceneName);
             }
         }
-
-        if(goingToCollide && movingTowardsCollision && raysCollided && stopMovement && inWall)
-        {
-            return potentialMove / potentialMove.magnitude * bigHitInformation.distance;
-        }
-        else
-        {
-            return potentialMove;
-        }
     }
 
-    private void characterControl(RaycastHit2D interactionHitInformation)
+    private void characterControl()
     {
         if (Input.GetKeyDown(KeyCode.Alpha1))
         {
-            swapCharacter(Characters.Cat, interactionHitInformation);
+            swapCharacter(Characters.Cat);
         }
 
         if (Input.GetKeyDown(KeyCode.Alpha2))
         {
-            swapCharacter(Characters.Mouse, interactionHitInformation);
+            swapCharacter(Characters.Mouse);
         }
 
         if (Input.GetKeyDown(KeyCode.Alpha3))
         {
-            swapCharacter(Characters.Bat, interactionHitInformation);
+            swapCharacter(Characters.Bat);
         }
     }
-    private void swapCharacter(Characters targetCharacter, RaycastHit2D interactionHitInformation)
+    private void swapCharacter(Characters targetCharacter)
     {
-        bool changeCharacter = true;
+        bool changeCharacter = false;
         
         // Don't allow change if character is not unlocked
-        if (!unlockedCharacters.Contains(targetCharacter))
+        if (unlockedCharacters.Contains(targetCharacter))
         {
-            changeCharacter = false;
+            changeCharacter = true;
         }
 
         // make it so that characters can only be swapped in good places
-        if (interactionHitInformation.collider != null)
+        if (changeCharacter)
         {
-            ColliderInformation information = colliderInformations[interactionHitInformation.collider.tag];
+            float newHitboxSize = charachterInformations[targetCharacter].HitBoxScale;
 
-            if (information.StopMovement && information.Character != targetCharacter)
+            RaycastHit2D cast = Physics2D.BoxCast(transform.position, new Vector2(newHitboxSize, newHitboxSize), 0, Vector2.zero, raycastDistance, (int)Layers.AlwaysWall);
+
+            if (cast.collider == null)
             {
-                changeCharacter = false;
+                cast = Physics2D.BoxCast(transform.position, new Vector2(newHitboxSize, newHitboxSize), 0, Vector2.zero, raycastDistance, (int)Layers.SometimesWall);
+
+                if (cast.collider == null)
+                {
+                    changeCharacter = true;
+                }
+                else
+                {
+                    ColliderInformation information = colliderInformations[cast.collider.tag];
+
+                    if (!information.StopMovement || information.Character == targetCharacter)
+                    {
+                        changeCharacter = true;
+                    }
+                }
             }
         }
 
