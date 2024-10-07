@@ -620,6 +620,7 @@ GameObject:
   - component: {fileID: 254666780}
   - component: {fileID: 254666781}
   - component: {fileID: 254666782}
+  - component: {fileID: 254666783}
   m_Layer: 3
   m_Name: Witch
   m_TagString: Wall
@@ -683,7 +684,7 @@ SpriteRenderer:
   m_SortingLayerID: 0
   m_SortingLayer: 0
   m_SortingOrder: 0
-  m_Sprite: {fileID: 499192721, guid: 3808b9f0f17c68a48b42aa2038fecc8f, type: 3}
+  m_Sprite: {fileID: -1324159444, guid: f7db5bb8988db854da4af59fe867e462, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 1
   m_FlipY: 0
@@ -720,6 +721,27 @@ BoxCollider2D:
   serializedVersion: 2
   m_Size: {x: 0.4, y: 0.56}
   m_EdgeRadius: 0
+--- !u!95 &254666783
+Animator:
+  serializedVersion: 5
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 254666779}
+  m_Enabled: 1
+  m_Avatar: {fileID: 0}
+  m_Controller: {fileID: 9100000, guid: e215be3e2bc2338418d2dfd14e3eba8e, type: 2}
+  m_CullingMode: 0
+  m_UpdateMode: 0
+  m_ApplyRootMotion: 0
+  m_LinearVelocityBlending: 0
+  m_StabilizeFeet: 0
+  m_WarningMessage: 
+  m_HasTransformHierarchy: 1
+  m_AllowConstantClipSamplingOptimization: 1
+  m_KeepAnimatorStateOnDisable: 0
+  m_WriteDefaultValuesOnDisable: 0
 --- !u!1 &254768127
 GameObject:
   m_ObjectHideFlags: 0
