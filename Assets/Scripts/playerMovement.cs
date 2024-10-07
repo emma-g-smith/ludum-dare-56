@@ -98,15 +98,16 @@ public class playerMovement : MonoBehaviour
 
         colliderInformations = new Dictionary<string, ColliderInformation>();
         colliderInformations["Wall"] = new ColliderInformation(stopMovement:true);
-        colliderInformations["Water"] = new ColliderInformation(stopMovement:true, character:Characters.Bat);
-        colliderInformations["MouseHole"] = new ColliderInformation(stopMovement:true, character:Characters.Mouse);
-        colliderInformations["Vine"] = new ColliderInformation(stopMovement:true, canBreak:true, character:Characters.Cat);
+        colliderInformations["Water"] = new ColliderInformation(stopMovement:true, hasDialogue: true, character:Characters.Bat, dialogue: DialogueHandler.Dialogues.HintFly);
+        colliderInformations["MouseHole"] = new ColliderInformation(stopMovement:true, hasDialogue: true, character:Characters.Mouse, dialogue: DialogueHandler.Dialogues.HintSmall);
+        colliderInformations["Vine"] = new ColliderInformation(stopMovement:true, canBreak:true, hasDialogue: true, character:Characters.Cat, dialogue: DialogueHandler.Dialogues.HintVines);
         colliderInformations["Door"] = new ColliderInformation(stopMovement:true, canBreak:true, character:Characters.Key);
         colliderInformations["Key"] = new ColliderInformation(canPickup:true, character:Characters.Key);
         colliderInformations["MouseAcquire"] = new ColliderInformation(canPickup: true, character:Characters.Mouse);
         colliderInformations["BatAcquire"] = new ColliderInformation(canPickup: true, character: Characters.Bat);
-        colliderInformations["Bones"] = new ColliderInformation(stopMovement:true, canPickup: true, character: Characters.Bones);
+        colliderInformations["Bones"] = new ColliderInformation(stopMovement:true, canPickup: true, hasDialogue: true, character: Characters.Bones, dialogue: DialogueHandler.Dialogues.Letter);
         colliderInformations["Pumpkin"] = new ColliderInformation(canInteract: true, stopMovement: true, character: Characters.Cat, targetSceneName:"PumpkinGame");
+        colliderInformations["Witch"] = new ColliderInformation(stopMovement: true);
         
         // teleporters
         colliderInformations["HouseOutside"] = new ColliderInformation(canTeleport: true, teleportName:"TeleporterHouseInside");
@@ -115,17 +116,6 @@ public class playerMovement : MonoBehaviour
         colliderInformations["CaveInside"] = new ColliderInformation(canTeleport: true, teleportName: "TeleporterCaveOutside");
         colliderInformations["BonesOutside"] = new ColliderInformation(canTeleport: true, character: Characters.Key, teleportName: "TeleporterBonesInside");
         colliderInformations["BonesInside"] = new ColliderInformation(canTeleport: true, character: Characters.Bones, teleportName: "TeleporterBonesOutside");
-
-        // dialogue triggers
-        colliderInformations["DialogueIntro"] = new ColliderInformation(hasDialogue: true, dialogue: DialogueHandler.Dialogues.Intro);
-        colliderInformations["DialogueMeetingMouse"] = new ColliderInformation(hasDialogue: true, dialogue: DialogueHandler.Dialogues.MeetingMouse);
-        colliderInformations["DialogueMeetingBat"] = new ColliderInformation(hasDialogue: true, dialogue: DialogueHandler.Dialogues.MeetingBat);
-        colliderInformations["DialogueHintFly"] = new ColliderInformation(hasDialogue: true, dialogue: DialogueHandler.Dialogues.HintFly);
-        colliderInformations["DialogueHintSmall"] = new ColliderInformation(hasDialogue: true, dialogue: DialogueHandler.Dialogues.HintSmall);
-        colliderInformations["DialogueHintLock"] = new ColliderInformation(hasDialogue: true, dialogue: DialogueHandler.Dialogues.HintLock);
-        colliderInformations["DialogueLetter"] = new ColliderInformation(hasDialogue: true, dialogue: DialogueHandler.Dialogues.Letter);
-        colliderInformations["DialogueFinal"] = new ColliderInformation(hasDialogue: true, dialogue: DialogueHandler.Dialogues.Final);
-
 
         unlockedCharacters = new HashSet<Characters>();
         unlockedCharacters.Add(Characters.Cat);
@@ -139,7 +129,7 @@ public class playerMovement : MonoBehaviour
 
         currentCharacter = Characters.Cat;
 
-        currentScene = Scenes.House;
+        currentScene = Scenes.Inside;
 
         swapCharacter(currentCharacter);
 
@@ -264,8 +254,12 @@ public class playerMovement : MonoBehaviour
 
         charachterAnimators[currentCharacter].SetBool("IsMoving", moveVector.magnitude != 0);
 
-        interact(interacting, Layers.AlwaysWall);
-        interact(interacting, Layers.Neverwall);
+        if (interacting)
+        {
+            interact(Layers.AlwaysWall);
+            interact(Layers.SometimesWall);
+            interact(Layers.Neverwall);
+        }
 
         transform.position += moveVector;
     }
@@ -361,7 +355,7 @@ public class playerMovement : MonoBehaviour
             return potentialMove;
         }
     }
-    private void interact(bool interacting, Layers layer)
+    private void interact(Layers layer)
     {
         float hitBoxScale = charachterInformations[currentCharacter].HitBoxScale;
         RaycastHit2D interactionHitInformation = Physics2D.BoxCast(transform.position, new Vector2(interactionRadius * hitBoxScale, interactionRadius * hitBoxScale), 0, Vector2.zero, raycastDistance, (int) layer);
@@ -372,7 +366,7 @@ public class playerMovement : MonoBehaviour
             ColliderInformation information = colliderInformations[interactionHitInformation.collider.tag];
 
             // block break
-            if (interacting && information.CanBreak && (currentCharacter == information.Character || inventory.Contains(information.Character)))
+            if (information.CanBreak && (currentCharacter == information.Character || inventory.Contains(information.Character)))
             {
                 if (interactionHitInformation.collider.tag == "Vine")
                 {
@@ -386,7 +380,7 @@ public class playerMovement : MonoBehaviour
             }
 
             // pick up
-            if (interacting && information.CanPickup)
+            if (information.CanPickup)
             {
                 if (playableCharacters.Contains(information.Character))
                 {
@@ -412,7 +406,7 @@ public class playerMovement : MonoBehaviour
             }
 
             // teleport
-            if (interacting && information.CanTeleport)
+            if (information.CanTeleport)
             {
                 // make sure if character is specified, that item is in inventory
                 if (inventory.Contains(information.Character) || information.Character == Characters.All)
@@ -422,11 +416,24 @@ public class playerMovement : MonoBehaviour
 
                     transform.position = targetPosition;
                     justTeleported = true;
-                }                
+                }
+                
+                // if not show dialogue message
+                if(!inventory.Contains(information.Character))
+                {
+                    if (information.Character == Characters.Key)
+                    {
+                        DialogueHandler.onDialogueStart?.Invoke(DialogueHandler.Dialogues.HintLock);
+                    }
+                    if (information.Character == Characters.Bones)
+                    {
+                        DialogueHandler.onDialogueStart?.Invoke(DialogueHandler.Dialogues.HintBones);
+                    }
+                }
             }
 
             // pumpkin teleport
-            if (interacting && information.CanInteract && !state.PumpkinCarved)
+            if (information.CanInteract && !state.PumpkinCarved)
             {
                 state.PlayerPosition = transform.position;
                 state.VinesCut = true;
@@ -438,9 +445,27 @@ public class playerMovement : MonoBehaviour
             }
 
             // dialogue
-            if (interacting && information.HasDialogue)
+            if (information.HasDialogue)
             {
-                DialogueHandler.onDialogueStart?.Invoke(information.Dialogue);
+                // make sure if character is specified, that it is excluded
+                if (currentCharacter != information.Character || information.Character == Characters.All)
+                {
+                    DialogueHandler.onDialogueStart?.Invoke(information.Dialogue);
+                }
+            }
+
+            // custom witch code
+            if (interactionHitInformation.collider.tag == "Witch")
+            {
+                if (inventory.Contains(Characters.Bones))
+                {
+                    DialogueHandler.onDialogueStart?.Invoke(DialogueHandler.Dialogues.Final);
+                    // move to final scene
+                }
+                else
+                {
+                    DialogueHandler.onDialogueStart?.Invoke(DialogueHandler.Dialogues.Intro);
+                }
             }
         }
     }
