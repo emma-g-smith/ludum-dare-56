@@ -45,6 +45,7 @@ public class playerMovement : MonoBehaviour
         Mouse,
         Bat,
         Key,
+        Bones,
         None,
         All
     }
@@ -90,7 +91,7 @@ public class playerMovement : MonoBehaviour
         cameraPresets[Scenes.Garden] = new CameraInformation(46.8f, 14.8f, 5, -13, new List<Scenes> { Scenes.House, Scenes.CaveOutside });
         cameraPresets[Scenes.CaveOutside] = new CameraInformation(77.8f, 45.8f, 9, -9, new List<Scenes> { Scenes.Garden, Scenes.CaveInside });
         cameraPresets[Scenes.CaveInside] = new CameraInformation(109.8f, 77.8f, 9, -9, new List<Scenes> { Scenes.CaveOutside, Scenes.BoneRoom });
-        cameraPresets[Scenes.BoneRoom] = new CameraInformation(46.8f, 14.8f, 9, -9, new List<Scenes> { Scenes.CaveInside });
+        cameraPresets[Scenes.BoneRoom] = new CameraInformation(141.8f, 109.8f, 9, -9, new List<Scenes> { Scenes.CaveInside });
 
         colliderInformations = new Dictionary<string, ColliderInformation>();
         colliderInformations["Wall"] = new ColliderInformation(stopMovement:true);
@@ -101,12 +102,14 @@ public class playerMovement : MonoBehaviour
         colliderInformations["Key"] = new ColliderInformation(canPickup:true, character:Characters.Key);
         colliderInformations["MouseAcquire"] = new ColliderInformation(canPickup: true, character:Characters.Mouse);
         colliderInformations["BatAcquire"] = new ColliderInformation(canPickup: true, character: Characters.Bat);
+        colliderInformations["Bones"] = new ColliderInformation(stopMovement:true, canPickup: true, character: Characters.Bones);
         colliderInformations["Pumpkin"] = new ColliderInformation(canInteract: true, stopMovement: true, character: Characters.Cat, targetSceneName:"PumpkinGame");
         colliderInformations["HouseOutside"] = new ColliderInformation(canTeleport: true, teleportName:"TeleporterHouseInside");
         colliderInformations["HouseInside"] = new ColliderInformation(canTeleport: true, teleportName: "TeleporterHouseOutside");
-        // Make it so only the mouse can teleport
         colliderInformations["CaveOutside"] = new ColliderInformation(canTeleport: true, teleportName: "TeleporterCaveInside");
         colliderInformations["CaveInside"] = new ColliderInformation(canTeleport: true, teleportName: "TeleporterCaveOutside");
+        colliderInformations["BonesOutside"] = new ColliderInformation(canTeleport: true, character: Characters.Key, teleportName: "TeleporterBonesInside");
+        colliderInformations["BonesInside"] = new ColliderInformation(canTeleport: true, character: Characters.Bones, teleportName: "TeleporterBonesOutside");
 
         unlockedCharacters = new HashSet<Characters>();
         unlockedCharacters.Add(Characters.Cat);
@@ -355,11 +358,15 @@ public class playerMovement : MonoBehaviour
             // teleport
             if (interacting && information.CanTeleport)
             {
-                Vector3 targetPosition = GameObject.Find(information.TeleportName).transform.position;
-                targetPosition.z = transform.position.z;
+                // make sure if character is specified, that item is in inventory
+                if (inventory.Contains(information.Character) || information.Character == Characters.All)
+                {
+                    Vector3 targetPosition = GameObject.Find(information.TeleportName).transform.position;
+                    targetPosition.z = transform.position.z;
 
-                transform.position = targetPosition;
-                justTeleported = true;
+                    transform.position = targetPosition;
+                    justTeleported = true;
+                }                
             }
 
             // change scene
