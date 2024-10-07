@@ -208,7 +208,7 @@ PrefabInstance:
     - target: {fileID: 1518076744844724532, guid: 89c4e62568f4faf4593668695e86a76f, type: 3}
       propertyPath: vineCollider
       value: 
-      objectReference: {fileID: 0}
+      objectReference: {fileID: 301779097}
     - target: {fileID: 1518076744844724532, guid: 89c4e62568f4faf4593668695e86a76f, type: 3}
       propertyPath: vinesCutImage
       value: 

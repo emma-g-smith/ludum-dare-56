@@ -25,7 +25,7 @@ public class playerMovement : MonoBehaviour
     [SerializeField] private GameObject pumpkinFace;
     [SerializeField] private SpriteRenderer vinesImage;
     [SerializeField] private Sprite vinesCutImage;
-    [SerializeField] private BoxCollider2D vineCollider;
+    [SerializeField] private PolygonCollider2D vineCollider;
 
     private Dictionary<Characters, CharacterInformation> charachterInformations;
     private Dictionary<Characters, Animator> charachterAnimators;
@@ -128,6 +128,11 @@ public class playerMovement : MonoBehaviour
         {
             transform.position = state.PlayerPosition;
             justTeleported = true;
+        }
+        if (state.VinesCut)
+        {
+            vinesImage.sprite = vinesCutImage;
+            vineCollider.enabled = false;
         }
     }
 
@@ -276,6 +281,7 @@ public class playerMovement : MonoBehaviour
                 {
                     vinesImage.sprite = vinesCutImage;
                     vineCollider.enabled = false;
+                    state.VinesCut = true;
                 }
                 else
                 {
