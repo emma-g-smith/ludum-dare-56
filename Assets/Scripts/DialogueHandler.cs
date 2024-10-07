@@ -17,7 +17,9 @@ public class DialogueHandler : MonoBehaviour
         MeetingBat,
         HintFly,
         HintSmall,
+        HintVines,
         HintLock,
+        HintBones,
         Letter,
         Final,
         None,
@@ -40,7 +42,7 @@ public class DialogueHandler : MonoBehaviour
     {
         dialogueInformations = new Dictionary<Dialogues, DialogueInformation>();
         dialogueInformations[Dialogues.Intro] = new DialogueInformation(new string[] { 
-            "Witch: You are always so forgetful. Your controls are: [WASD] to move [e] to interact [123] to swap",
+            "Witch: You are always so forgetful. Your controls are: [WASD] to move [e] to interact/get hints, and [123] to swap",
             "Witch: sigh...",
             "Witch: Being immortal is so lonely. The last time i saw my husband, he asked me to go see the world for him.",
             "Witch: He knew he’d be gone by the time I returned. He had grown quite old. It was his last wish.", 
@@ -61,8 +63,14 @@ public class DialogueHandler : MonoBehaviour
         dialogueInformations[Dialogues.HintSmall] = new DialogueInformation(new string[] {
             "You: I’m not small enough to crawl through"
         }, noFill: true);
+        dialogueInformations[Dialogues.HintVines] = new DialogueInformation(new string[] {
+            "You: If only I could slash away those vines..."
+        }, noFill: true);
         dialogueInformations[Dialogues.HintLock] = new DialogueInformation(new string[] {
             "You: It’s locked"
+        }, noFill: true);
+        dialogueInformations[Dialogues.HintBones] = new DialogueInformation(new string[] {
+            "You: I should probably grab those."
         }, noFill: true);
         dialogueInformations[Dialogues.Letter] = new DialogueInformation(new string[] {
             "Letter: I knew you would find me!"
@@ -117,6 +125,7 @@ public class DialogueHandler : MonoBehaviour
 
     private IEnumerator TypeLine()
     {
+
         foreach(char character in lines[index].ToCharArray())
         {
             text.text += character;

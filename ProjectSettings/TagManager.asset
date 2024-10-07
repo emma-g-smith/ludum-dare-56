@@ -20,6 +20,7 @@ TagManager:
   - Bones
   - BonesOutside
   - BonesInside
+  - Witch
   layers:
   - Default
   - TransparentFX
