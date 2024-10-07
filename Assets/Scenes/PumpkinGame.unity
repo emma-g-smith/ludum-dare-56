@@ -293,6 +293,7 @@ MonoBehaviour:
   _camera: {fileID: 1364428146}
   button: {fileID: 284736216}
   carvingMinimum: 20
+  state: {fileID: 11400000, guid: afba398233f40a24e89d8ceef1a64c1f, type: 2}
 --- !u!4 &428846107
 Transform:
   m_ObjectHideFlags: 0
@@ -320,7 +321,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5c1c213fda0b5a949bcb49341288e40e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  targetSceneName: BazzaTest
+  targetSceneName: MainGame
 --- !u!1 &442619530
 GameObject:
   m_ObjectHideFlags: 0

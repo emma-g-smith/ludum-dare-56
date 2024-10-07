@@ -16,6 +16,8 @@ public class CarvingCreator : MonoBehaviour
 
     [SerializeField] private int carvingMinimum = 20;
 
+    [SerializeField] private StateSaveObject state;
+
     private int carvingsMade;
 
     private Vector2 mousePos;
@@ -50,6 +52,7 @@ public class CarvingCreator : MonoBehaviour
 
         if (carvingsMade > carvingMinimum)
         {
+            state.PumpkinCarved = true;
             button.gameObject.SetActive(true);
         }
     }

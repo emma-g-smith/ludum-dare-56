@@ -20,6 +20,8 @@ public class playerMovement : MonoBehaviour
 
     [SerializeField] private float cameraSpeed = 5f;
 
+    [SerializeField] private StateSaveObject state;
+
     private Dictionary<Characters, CharacterInformation> charachterInformations;
     private Dictionary<Characters, Animator> charachterAnimators;
     private Dictionary<Scenes, CameraInformation> cameraPresets;
@@ -81,7 +83,7 @@ public class playerMovement : MonoBehaviour
         colliderInformations["Key"] = new ColliderInformation(canPickup:true, character:Characters.Key);
         colliderInformations["MouseAcquire"] = new ColliderInformation(canPickup: true, character:Characters.Mouse);
         colliderInformations["BatAcquire"] = new ColliderInformation(canPickup: true, character: Characters.Bat);
-        colliderInformations["Pumpkin"] = new ColliderInformation(canInteract: true, character: Characters.Cat, targetSceneName:"PumpkinGame");
+        colliderInformations["Pumpkin"] = new ColliderInformation(canInteract: true, stopMovement: true, character: Characters.Cat, targetSceneName:"PumpkinGame");
         colliderInformations["HouseOutside"] = new ColliderInformation(canTeleport: true, teleportName:"TeleporterHouseInside");
         colliderInformations["HouseInside"] = new ColliderInformation(canTeleport: true, teleportName: "TeleporterHouseOutside");
         colliderInformations["CaveOutside"] = new ColliderInformation(canTeleport: true, teleportName: "PumpkinGame");
@@ -107,6 +109,13 @@ public class playerMovement : MonoBehaviour
 
         wasInteracting = false;
         justTeleported = false;
+
+        // load the save state
+        if (state.PumpkinCarved)
+        {
+            transform.position = state.PlayerPosition;
+            justTeleported = true;
+        }
     }
 
     // Update is called once per frame
@@ -154,7 +163,7 @@ public class playerMovement : MonoBehaviour
         {
             moveVector.x -= 1;
         }
-        if (Input.GetKey(KeyCode.E))
+        if (Input.GetKeyDown(KeyCode.E))
         {
             interacting = true;
         }
@@ -242,7 +251,7 @@ public class playerMovement : MonoBehaviour
             ColliderInformation information = colliderInformations[bigHitInformation.collider.tag];
 
             // stop movement
-            if (currentCharacter != information.Character || information.CanBreak)
+            if (currentCharacter != information.Character || information.CanBreak || information.CanInteract)
             {
                 stopMovement = information.StopMovement;
             }
@@ -285,6 +294,7 @@ public class playerMovement : MonoBehaviour
             // change scene
             if (interacting && information.CanInteract)
             {
+                state.PlayerPosition = transform.position;
                 SceneManager.LoadScene(information.TargetSceneName);
             }
         }
@@ -376,11 +386,11 @@ public class playerMovement : MonoBehaviour
             }
         }
 
-        information = cameraPresets[currentScene];
 
         // move camera towards correct position for scene if pan and jump cut if not
         if (justTeleported)
         {
+            information = cameraPresets[currentScene];
             Camera.main.transform.position = information.CameraTarget;
             justTeleported = false;
         }
