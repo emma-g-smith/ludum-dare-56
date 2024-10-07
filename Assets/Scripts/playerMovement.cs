@@ -38,6 +38,7 @@ public class playerMovement : MonoBehaviour
     private Scenes currentScene;
     private bool wasInteracting;
     private bool justTeleported;
+    private bool controlsEnabled;
 
     private enum Characters
     {
@@ -104,12 +105,25 @@ public class playerMovement : MonoBehaviour
         colliderInformations["BatAcquire"] = new ColliderInformation(canPickup: true, character: Characters.Bat);
         colliderInformations["Bones"] = new ColliderInformation(stopMovement:true, canPickup: true, character: Characters.Bones);
         colliderInformations["Pumpkin"] = new ColliderInformation(canInteract: true, stopMovement: true, character: Characters.Cat, targetSceneName:"PumpkinGame");
+        
+        // teleporters
         colliderInformations["HouseOutside"] = new ColliderInformation(canTeleport: true, teleportName:"TeleporterHouseInside");
         colliderInformations["HouseInside"] = new ColliderInformation(canTeleport: true, teleportName: "TeleporterHouseOutside");
         colliderInformations["CaveOutside"] = new ColliderInformation(canTeleport: true, teleportName: "TeleporterCaveInside");
         colliderInformations["CaveInside"] = new ColliderInformation(canTeleport: true, teleportName: "TeleporterCaveOutside");
         colliderInformations["BonesOutside"] = new ColliderInformation(canTeleport: true, character: Characters.Key, teleportName: "TeleporterBonesInside");
         colliderInformations["BonesInside"] = new ColliderInformation(canTeleport: true, character: Characters.Bones, teleportName: "TeleporterBonesOutside");
+
+        // dialogue triggers
+        colliderInformations["DialogueIntro"] = new ColliderInformation(hasDialogue: true, dialogue: DialogueHandler.Dialogues.Intro);
+        colliderInformations["DialogueMeetingMouse"] = new ColliderInformation(hasDialogue: true, dialogue: DialogueHandler.Dialogues.MeetingMouse);
+        colliderInformations["DialogueMeetingBat"] = new ColliderInformation(hasDialogue: true, dialogue: DialogueHandler.Dialogues.MeetingBat);
+        colliderInformations["DialogueHintFly"] = new ColliderInformation(hasDialogue: true, dialogue: DialogueHandler.Dialogues.HintFly);
+        colliderInformations["DialogueHintSmall"] = new ColliderInformation(hasDialogue: true, dialogue: DialogueHandler.Dialogues.HintSmall);
+        colliderInformations["DialogueHintLock"] = new ColliderInformation(hasDialogue: true, dialogue: DialogueHandler.Dialogues.HintLock);
+        colliderInformations["DialogueLetter"] = new ColliderInformation(hasDialogue: true, dialogue: DialogueHandler.Dialogues.Letter);
+        colliderInformations["DialogueFinal"] = new ColliderInformation(hasDialogue: true, dialogue: DialogueHandler.Dialogues.Final);
+
 
         unlockedCharacters = new HashSet<Characters>();
         unlockedCharacters.Add(Characters.Cat);
@@ -129,6 +143,7 @@ public class playerMovement : MonoBehaviour
 
         wasInteracting = false;
         justTeleported = false;
+        controlsEnabled = true;
 
         mouseCollectable.SetActive(state.PumpkinCarved);
         pumpkinFace.SetActive(state.PumpkinCarved);
@@ -144,22 +159,41 @@ public class playerMovement : MonoBehaviour
             vinesImage.sprite = vinesCutImage;
             vineCollider.enabled = false;
         }
+
+        // hooking up events and delegates
+        DialogueHandler.onDialogueStart += dialogueStarted;
+        DialogueHandler.onDialogueEnd += dialogueEnded;
+
+        // call intro dialog
+        DialogueHandler.onDialogueStart?.Invoke(DialogueHandler.Dialogues.Intro);
     }
 
     // Update is called once per frame
     void Update()
     {
-        movementControl();
-
-        characterControl();
-
-        cameraControl();
-
-        // only have custom interaction code if cat
-        if (currentCharacter == Characters.Cat)
+        if (controlsEnabled)
         {
-            wasInteracting = catAnimator.GetCurrentAnimatorStateInfo(0).IsName("cat_claw");
+            movementControl();
+
+            characterControl();
+
+            cameraControl();
+
+            // only have custom interaction code if cat
+            if (currentCharacter == Characters.Cat)
+            {
+                wasInteracting = catAnimator.GetCurrentAnimatorStateInfo(0).IsName("cat_claw");
+            }
         }
+    }
+
+    private void dialogueStarted(DialogueHandler.Dialogues dialogue)
+    {
+        controlsEnabled = false;
+    }
+    private void dialogueEnded()
+    {
+        controlsEnabled = true;
     }
 
     private void movementControl()
@@ -375,6 +409,12 @@ public class playerMovement : MonoBehaviour
                 state.PlayerPosition = transform.position;
                 SceneManager.LoadScene(information.TargetSceneName);
             }
+
+            // dialogue
+            if (interacting && information.HasDialogue)
+            {
+                DialogueHandler.onDialogueStart?.Invoke(information.Dialogue);
+            }
         }
     }
 
@@ -484,7 +524,6 @@ public class playerMovement : MonoBehaviour
             Camera.main.transform.position = Vector3.Lerp(Camera.main.transform.position, information.CameraTarget, cameraSpeed * Time.deltaTime);
         }
     }
-
     private bool characterInScene(Scenes scene)
     {
         CameraInformation information = cameraPresets[scene];
@@ -531,6 +570,8 @@ public class playerMovement : MonoBehaviour
         private Characters character;
         private string targetSceneName;
         private string teleportName;
+        private bool hasDialogue;
+        private DialogueHandler.Dialogues dialogue;
 
         // Public Fields
         public bool StopMovement { get { return stopMovement; } }
@@ -541,8 +582,10 @@ public class playerMovement : MonoBehaviour
         public Characters Character { get { return character; } }
         public string TargetSceneName { get { return targetSceneName; } }
         public string TeleportName { get { return teleportName; } }
+        public bool HasDialogue { get { return hasDialogue; } }
+        public DialogueHandler.Dialogues Dialogue { get { return dialogue; } }
 
-        public ColliderInformation(bool stopMovement = false, bool canPickup = false, bool canBreak = false, bool canInteract = false, bool canTeleport = false, Characters character = Characters.All, string targetSceneName="", string teleportName = "")
+        public ColliderInformation(bool stopMovement = false, bool canPickup = false, bool canBreak = false, bool canInteract = false, bool canTeleport = false, Characters character = Characters.All, string targetSceneName="", string teleportName = "", bool hasDialogue = false, DialogueHandler.Dialogues dialogue = DialogueHandler.Dialogues.None)
         {
             this.stopMovement = stopMovement;
             this.canPickup = canPickup;
@@ -552,6 +595,8 @@ public class playerMovement : MonoBehaviour
             this.character = character;
             this.targetSceneName = targetSceneName;
             this.teleportName = teleportName;
+            this.hasDialogue = hasDialogue;
+            this.dialogue = dialogue;
         }
     }
     private class CameraInformation
