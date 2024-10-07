@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 using TMPro;
 
 public class DialogueHandler : MonoBehaviour
@@ -36,6 +37,7 @@ public class DialogueHandler : MonoBehaviour
     private Dictionary<Dialogues, DialogueInformation> dialogueInformations;
     private string[] lines;
     private int index;
+    private Dialogues dialogue;
 
     // Start is called before the first frame update
     void Start()
@@ -82,6 +84,7 @@ public class DialogueHandler : MonoBehaviour
 
 
         // Set up text variables
+        dialogue = Dialogues.Intro;
         text.text = string.Empty;
         panel.SetActive(false);
         onDialogueStart += StartDialogue;
@@ -110,6 +113,7 @@ public class DialogueHandler : MonoBehaviour
 
     private void StartDialogue(Dialogues dialogue)
     {
+        this.dialogue = dialogue;        
         lines = dialogueInformations[dialogue].Lines;
         panel.SetActive(true);
         index = 0;
@@ -143,7 +147,14 @@ public class DialogueHandler : MonoBehaviour
         }
         else
         {
-            onDialogueEnd?.Invoke();
+            if(dialogue == Dialogues.Final)
+            {
+                SceneManager.LoadScene("EndCutscene");
+            }
+            else
+            {
+                onDialogueEnd?.Invoke();
+            }
         }
     }
     

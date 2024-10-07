@@ -471,7 +471,6 @@ public class playerMovement : MonoBehaviour
                 if (inventory.Contains(Characters.Bones))
                 {
                     DialogueHandler.onDialogueStart?.Invoke(DialogueHandler.Dialogues.Final);
-                    // move to final scene
                 }
                 else
                 {
