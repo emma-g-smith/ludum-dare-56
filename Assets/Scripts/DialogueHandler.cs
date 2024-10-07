@@ -125,6 +125,7 @@ public class DialogueHandler : MonoBehaviour
 
     private IEnumerator TypeLine()
     {
+
         foreach(char character in lines[index].ToCharArray())
         {
             text.text += character;

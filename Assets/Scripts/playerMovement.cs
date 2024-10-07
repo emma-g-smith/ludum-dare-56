@@ -9,6 +9,7 @@ public class playerMovement : MonoBehaviour
     [SerializeField] private float movementSpeed = 1f;
     [SerializeField] private float interactionRadius = 2f;
     [SerializeField] private float raycastDistance = 5f;
+    [SerializeField] private float interactSpeed = 0.25f;
     [SerializeField] private Animator catAnimator;
     [SerializeField] private Animator mouseAnimator;
     [SerializeField] private Animator batAnimator;
@@ -39,6 +40,7 @@ public class playerMovement : MonoBehaviour
     private bool justTeleported;
     private bool controlsEnabled;
     private GameObject lastFriendAquired;
+    private float timeElapsed;
 
     private enum Characters
     {
@@ -135,8 +137,9 @@ public class playerMovement : MonoBehaviour
 
         wasInteracting = false;
         justTeleported = false;
-        controlsEnabled = true;
+        controlsEnabled = false;
 
+        timeElapsed = 0;
         mouseCollectable.SetActive(state.PumpkinCarved);
         pumpkinFace.SetActive(state.PumpkinCarved);
 
@@ -155,9 +158,6 @@ public class playerMovement : MonoBehaviour
         // hooking up events and delegates
         DialogueHandler.onDialogueStart += dialogueStarted;
         DialogueHandler.onDialogueEnd += dialogueEnded;
-
-        // call intro dialog
-        DialogueHandler.onDialogueStart?.Invoke(DialogueHandler.Dialogues.Intro);
     }
 
     // Update is called once per frame
@@ -176,6 +176,12 @@ public class playerMovement : MonoBehaviour
             {
                 wasInteracting = catAnimator.GetCurrentAnimatorStateInfo(0).IsName("cat_claw");
             }
+            else
+            {
+                wasInteracting = timeElapsed < interactSpeed;
+
+                timeElapsed += Time.deltaTime;
+            }
         }
     }
 
@@ -187,7 +193,7 @@ public class playerMovement : MonoBehaviour
     {
         controlsEnabled = true;
 
-        if(unlockedCharacters.Contains(Characters.Mouse))
+        if(lastFriendAquired != null && unlockedCharacters.Contains(Characters.Mouse))
         {
             lastFriendAquired.SetActive(false);
         }
@@ -221,6 +227,7 @@ public class playerMovement : MonoBehaviour
         if (Input.GetKeyDown(KeyCode.E))
         {
             interacting = true;
+            timeElapsed = 0;
         }
 
         charachterAnimators[currentCharacter].SetBool("IsInteracting", interacting);
@@ -229,6 +236,10 @@ public class playerMovement : MonoBehaviour
         if (currentCharacter == Characters.Cat)
         {
             interacting = wasInteracting && !charachterAnimators[currentCharacter].GetCurrentAnimatorStateInfo(0).IsName("cat_claw");
+        }
+        else
+        {
+            interacting = wasInteracting && (timeElapsed >= interactSpeed);
         }
 
         moveVector = moveVector.normalized * Time.deltaTime * movementSpeed;
