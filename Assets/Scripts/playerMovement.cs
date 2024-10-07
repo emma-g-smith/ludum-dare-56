@@ -51,12 +51,6 @@ public class playerMovement : MonoBehaviour
         Garden
     }
 
-    private enum SceneTransitions
-    {
-        Cut,
-        Pan
-    }
-
 
     // Start is called before the first frame update
     void Start()
@@ -72,11 +66,11 @@ public class playerMovement : MonoBehaviour
         charachterAnimators[Characters.Bat] = batAnimator;
 
         cameraPresets = new Dictionary<Scenes, CameraInformation>();
-        cameraPresets[Scenes.Inside] = new CameraInformation(16, -16, 27, 9, SceneTransitions.Cut, new List<Scenes> { Scenes.House });
-        cameraPresets[Scenes.House] = new CameraInformation(16, -16, 9, -9, SceneTransitions.Pan, new List<Scenes> { Scenes.Maze, Scenes.Garden, Scenes.Inside });
-        cameraPresets[Scenes.Maze] = new CameraInformation(-16, -48, 9, -9, SceneTransitions.Pan, new List<Scenes> { Scenes.House, Scenes.Tree });
-        cameraPresets[Scenes.Tree] = new CameraInformation(-48, -80, 17.5f, -0.5f, SceneTransitions.Pan, new List<Scenes> { Scenes.Maze });
-        cameraPresets[Scenes.Garden] = new CameraInformation(46.8f, 14.8f, 5, -13, SceneTransitions.Pan, new List<Scenes> { Scenes.House });
+        cameraPresets[Scenes.Inside] = new CameraInformation(16, -16, 27, 9, new List<Scenes> { Scenes.House });
+        cameraPresets[Scenes.House] = new CameraInformation(16, -16, 9, -9, new List<Scenes> { Scenes.Maze, Scenes.Garden, Scenes.Inside });
+        cameraPresets[Scenes.Maze] = new CameraInformation(-16, -48, 9, -9, new List<Scenes> { Scenes.House, Scenes.Tree });
+        cameraPresets[Scenes.Tree] = new CameraInformation(-48, -80, 17.5f, -0.5f, new List<Scenes> { Scenes.Maze });
+        cameraPresets[Scenes.Garden] = new CameraInformation(46.8f, 14.8f, 5, -13, new List<Scenes> { Scenes.House });
 
         colliderInformations = new Dictionary<string, ColliderInformation>();
         colliderInformations["Wall"] = new ColliderInformation(stopMovement:true);
@@ -471,7 +465,6 @@ public class playerMovement : MonoBehaviour
         private float leftBound;
         private float topBound;
         private float bottomBound;
-        private SceneTransitions transition;
         private List<Scenes> neighbors;
         private Vector3 cameraTarget;
 
@@ -479,17 +472,15 @@ public class playerMovement : MonoBehaviour
         public float LeftBound { get { return leftBound; } }
         public float TopBound { get { return topBound; } }
         public float BottomBound { get { return bottomBound; } }
-        public SceneTransitions Transition { get { return transition; } }
         public List<Scenes> Neighbors { get { return neighbors; } }
         public Vector3 CameraTarget { get { return cameraTarget; } }
 
-        public CameraInformation(float rightBound, float leftBound, float topBound, float bottomBound, SceneTransitions transition, List<Scenes> neighbors)
+        public CameraInformation(float rightBound, float leftBound, float topBound, float bottomBound, List<Scenes> neighbors)
         {
             this.rightBound = rightBound;
             this.leftBound = leftBound;
             this.topBound = topBound;
             this.bottomBound = bottomBound;
-            this.transition = transition;
             this.neighbors = neighbors;
 
             this.cameraTarget = new Vector3((rightBound + leftBound) / 2, (topBound + bottomBound) / 2, Camera.main.transform.position.z);
