@@ -233,6 +233,8 @@ public class playerMovement : MonoBehaviour
             // only do extra calculation if move has been cut
             if (calculatedMoveVector != potentialMove)
             {
+                Debug.Log("Here");
+
                 Vector3 xMove = new Vector3(potentialMove.x, 0, 0);
                 Vector3 yMove = new Vector3(0, potentialMove.y, 0);
 
@@ -244,29 +246,58 @@ public class playerMovement : MonoBehaviour
             }
         }
 
+        // final check to ensure move is valid
+        if (potentialMove.x != 0 || potentialMove.y != 0)
+        {
+            Vector3 checkMove = moveCalculations(calculatedMoveVector, layer, transform.position + calculatedMoveVector, false);
+
+            if (checkMove == Vector3.zero)
+            {
+                calculatedMoveVector = Vector3.zero;
+            }
+        }
+
         return calculatedMoveVector;
     }
-    private Vector3 moveCalculations(Vector3 potentialMove, Layers layer) //RaycastHit2D interactionHitInformation, bool interacting)
-    {       
+    private Vector3 moveCalculations(Vector3 potentialMove, Layers layer, Vector3? location = null, bool useBigBox=true) //RaycastHit2D interactionHitInformation, bool interacting)
+    {
+        Vector3 lookPoint;
+        if (location == null)
+        {
+            lookPoint = transform.position;
+        }
+        else
+        {
+            lookPoint = (Vector3)location;
+        }
+        
         // BoxCast only for colliders on the specified layer according to hitbox
         float bigBoxSize = charachterInformations[currentCharacter].HitBoxScale;
         float smallBoxSize = bigBoxSize * 0.9f;
 
-        RaycastHit2D bigHitInformation = Physics2D.BoxCast(transform.position, new Vector2(bigBoxSize, bigBoxSize), 0, potentialMove, raycastDistance, (int)layer);
-        RaycastHit2D smallHitInformation = Physics2D.BoxCast(transform.position, new Vector2(smallBoxSize, smallBoxSize), 0, potentialMove, raycastDistance, (int)layer);
-
-        //RaycastHit2D test = Physics2D.BoxCast(transform.position, new Vector2(smallBoxSize, smallBoxSize), 0, potentialMove, raycastDistance, layerMask);
+        RaycastHit2D bigHitInformation = Physics2D.BoxCast(lookPoint, new Vector2(bigBoxSize, bigBoxSize), 0, potentialMove, raycastDistance, (int)layer);
+        RaycastHit2D smallHitInformation = Physics2D.BoxCast(lookPoint, new Vector2(smallBoxSize, smallBoxSize), 0, potentialMove, raycastDistance, (int)layer);
 
         bool goingToCollide = potentialMove.magnitude > bigHitInformation.distance;
         bool movingTowardsCollision = smallHitInformation.distance - bigHitInformation.distance < (bigBoxSize - smallBoxSize) / 2;
         bool raysCollided = bigHitInformation.collider != null && smallHitInformation.collider != null;
         bool stopMovement = false;
 
+        // look at specified box
+        RaycastHit2D hitInformation;
+        if (useBigBox)
+        {
+            hitInformation = bigHitInformation;
+        }
+        else
+        {
+            hitInformation = smallHitInformation;
+        }
 
         // only stop movement for specific cases
-        if (bigHitInformation.collider != null)
+        if (hitInformation.collider != null)
         {
-            ColliderInformation information = colliderInformations[bigHitInformation.collider.tag];
+            ColliderInformation information = colliderInformations[hitInformation.collider.tag];
 
             // stop movement
             if (currentCharacter != information.Character || information.CanBreak || information.CanInteract)
@@ -277,7 +308,7 @@ public class playerMovement : MonoBehaviour
 
         if(goingToCollide && movingTowardsCollision && raysCollided && stopMovement)
         {
-            return potentialMove / potentialMove.magnitude * bigHitInformation.distance;
+            return potentialMove / potentialMove.magnitude * hitInformation.distance;
         }
         else
         {
