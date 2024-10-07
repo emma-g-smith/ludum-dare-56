@@ -13,6 +13,10 @@ TagManager:
   - BatAcquire
   - Door
   - Pumpkin
+  - HouseOutside
+  - HouseInside
+  - CaveOutside
+  - CaveInside
   layers:
   - Default
   - TransparentFX
