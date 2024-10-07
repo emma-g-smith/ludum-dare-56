@@ -21,6 +21,11 @@ public class playerMovement : MonoBehaviour
     [SerializeField] private float cameraSpeed = 5f;
 
     [SerializeField] private StateSaveObject state;
+    [SerializeField] private GameObject mouseCollectable;
+    [SerializeField] private GameObject pumpkinFace;
+    [SerializeField] private SpriteRenderer vinesImage;
+    [SerializeField] private Sprite vinesCutImage;
+    [SerializeField] private BoxCollider2D vineCollider;
 
     private Dictionary<Characters, CharacterInformation> charachterInformations;
     private Dictionary<Characters, Animator> charachterAnimators;
@@ -50,7 +55,10 @@ public class playerMovement : MonoBehaviour
         House,
         Maze,
         Tree,
-        Garden
+        Garden,
+        CaveOutside,
+        CaveInside,
+        BoneRoom,
     }
 
 
@@ -72,7 +80,10 @@ public class playerMovement : MonoBehaviour
         cameraPresets[Scenes.House] = new CameraInformation(16, -16, 9, -9, new List<Scenes> { Scenes.Maze, Scenes.Garden, Scenes.Inside });
         cameraPresets[Scenes.Maze] = new CameraInformation(-16, -48, 9, -9, new List<Scenes> { Scenes.House, Scenes.Tree });
         cameraPresets[Scenes.Tree] = new CameraInformation(-48, -80, 17.5f, -0.5f, new List<Scenes> { Scenes.Maze });
-        cameraPresets[Scenes.Garden] = new CameraInformation(46.8f, 14.8f, 5, -13, new List<Scenes> { Scenes.House });
+        cameraPresets[Scenes.Garden] = new CameraInformation(46.8f, 14.8f, 5, -13, new List<Scenes> { Scenes.House, Scenes.CaveOutside });
+        cameraPresets[Scenes.CaveOutside] = new CameraInformation(77.8f, 45.8f, 9, -9, new List<Scenes> { Scenes.Garden, Scenes.CaveInside });
+        cameraPresets[Scenes.CaveInside] = new CameraInformation(109.8f, 77.8f, 9, -9, new List<Scenes> { Scenes.CaveOutside, Scenes.BoneRoom });
+        cameraPresets[Scenes.BoneRoom] = new CameraInformation(46.8f, 14.8f, 9, -9, new List<Scenes> { Scenes.CaveInside });
 
         colliderInformations = new Dictionary<string, ColliderInformation>();
         colliderInformations["Wall"] = new ColliderInformation(stopMovement:true);
@@ -86,13 +97,12 @@ public class playerMovement : MonoBehaviour
         colliderInformations["Pumpkin"] = new ColliderInformation(canInteract: true, stopMovement: true, character: Characters.Cat, targetSceneName:"PumpkinGame");
         colliderInformations["HouseOutside"] = new ColliderInformation(canTeleport: true, teleportName:"TeleporterHouseInside");
         colliderInformations["HouseInside"] = new ColliderInformation(canTeleport: true, teleportName: "TeleporterHouseOutside");
-        colliderInformations["CaveOutside"] = new ColliderInformation(canTeleport: true, teleportName: "PumpkinGame");
-        colliderInformations["CaveInside"] = new ColliderInformation(canTeleport: true, teleportName: "PumpkinGame");
+        // Make it so only the mouse can teleport
+        colliderInformations["CaveOutside"] = new ColliderInformation(canTeleport: true, teleportName: "TeleporterCaveInside");
+        colliderInformations["CaveInside"] = new ColliderInformation(canTeleport: true, teleportName: "TeleporterCaveOutside");
 
         unlockedCharacters = new HashSet<Characters>();
         unlockedCharacters.Add(Characters.Cat);
-        unlockedCharacters.Add(Characters.Mouse);
-        unlockedCharacters.Add(Characters.Bat);
 
         playableCharacters = new HashSet<Characters>();
         playableCharacters.Add(Characters.Cat);
@@ -109,6 +119,9 @@ public class playerMovement : MonoBehaviour
 
         wasInteracting = false;
         justTeleported = false;
+
+        mouseCollectable.SetActive(state.PumpkinCarved);
+        pumpkinFace.SetActive(state.PumpkinCarved);
 
         // load the save state
         if (state.PumpkinCarved)
@@ -259,7 +272,15 @@ public class playerMovement : MonoBehaviour
             // break block
             if (interacting && information.CanBreak && (currentCharacter == information.Character || inventory.Contains(information.Character)))
             {
-                bigHitInformation.collider.gameObject.SetActive(false);
+                if (bigHitInformation.collider.tag == "Vine")
+                {
+                    vinesImage.sprite = vinesCutImage;
+                    vineCollider.enabled = false;
+                }
+                else
+                {
+                    bigHitInformation.collider.gameObject.SetActive(false);
+                }
             }
 
             // pick up
