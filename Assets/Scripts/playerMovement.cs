@@ -8,7 +8,6 @@ public class playerMovement : MonoBehaviour
 {
     [SerializeField] private float movementSpeed = 1f;
     [SerializeField] private float interactionRadius = 2f;
-    [SerializeField] private int layerMask = 0;
     [SerializeField] private float raycastDistance = 5f;
     [SerializeField] private Animator catAnimator;
     [SerializeField] private Animator mouseAnimator;
@@ -39,6 +38,7 @@ public class playerMovement : MonoBehaviour
     private bool wasInteracting;
     private bool justTeleported;
     private bool controlsEnabled;
+    private GameObject lastFriendAquired;
 
     private enum Characters
     {
@@ -58,6 +58,7 @@ public class playerMovement : MonoBehaviour
         Maze,
         Tree,
         Garden,
+        PumkinCarving,
         CaveOutside,
         CaveInside,
         BoneRoom,
@@ -89,7 +90,8 @@ public class playerMovement : MonoBehaviour
         cameraPresets[Scenes.House] = new CameraInformation(16, -16, 9, -9, new List<Scenes> { Scenes.Maze, Scenes.Garden, Scenes.Inside });
         cameraPresets[Scenes.Maze] = new CameraInformation(-16, -48, 9, -9, new List<Scenes> { Scenes.House, Scenes.Tree });
         cameraPresets[Scenes.Tree] = new CameraInformation(-48, -80, 17.5f, -0.5f, new List<Scenes> { Scenes.Maze });
-        cameraPresets[Scenes.Garden] = new CameraInformation(46.8f, 14.8f, 5, -13, new List<Scenes> { Scenes.House, Scenes.CaveOutside });
+        cameraPresets[Scenes.Garden] = new CameraInformation(46.8f, 14.8f, 5, -13, new List<Scenes> { Scenes.House, Scenes.CaveOutside, Scenes.PumkinCarving });
+        cameraPresets[Scenes.PumkinCarving] = new CameraInformation(46.8f, 14.8f, -46, -64, new List<Scenes> { Scenes.Garden });
         cameraPresets[Scenes.CaveOutside] = new CameraInformation(77.8f, 45.8f, 9, -9, new List<Scenes> { Scenes.Garden, Scenes.CaveInside });
         cameraPresets[Scenes.CaveInside] = new CameraInformation(109.8f, 77.8f, 9, -9, new List<Scenes> { Scenes.CaveOutside, Scenes.BoneRoom });
         cameraPresets[Scenes.BoneRoom] = new CameraInformation(141.8f, 109.8f, 9, -9, new List<Scenes> { Scenes.CaveInside });
@@ -194,6 +196,15 @@ public class playerMovement : MonoBehaviour
     private void dialogueEnded()
     {
         controlsEnabled = true;
+
+        if(unlockedCharacters.Contains(Characters.Mouse))
+        {
+            lastFriendAquired.SetActive(false);
+        }
+        if(unlockedCharacters.Contains(Characters.Bat))
+        {
+            lastFriendAquired.SetActive(false);
+        }
     }
 
     private void movementControl()
@@ -367,7 +378,6 @@ public class playerMovement : MonoBehaviour
                 {
                     vinesImage.sprite = vinesCutImage;
                     vineCollider.enabled = false;
-                    state.VinesCut = true;
                 }
                 else
                 {
@@ -378,14 +388,26 @@ public class playerMovement : MonoBehaviour
             // pick up
             if (interacting && information.CanPickup)
             {
-                interactionHitInformation.collider.gameObject.SetActive(false);
                 if (playableCharacters.Contains(information.Character))
                 {
                     unlockedCharacters.Add(information.Character);
+
+                    // call specific dialogues when characters are unlocked
+                    if (information.Character == Characters.Mouse)
+                    {
+                        DialogueHandler.onDialogueStart?.Invoke(DialogueHandler.Dialogues.MeetingMouse); 
+                    }
+                    if (information.Character == Characters.Bat)
+                    {
+                        DialogueHandler.onDialogueStart?.Invoke(DialogueHandler.Dialogues.MeetingBat); 
+                    }
+
+                    lastFriendAquired = interactionHitInformation.collider.gameObject;
                 }
                 else
                 {
                     inventory.Add(information.Character);
+                    interactionHitInformation.collider.gameObject.SetActive(false);
                 }
             }
 
@@ -403,11 +425,16 @@ public class playerMovement : MonoBehaviour
                 }                
             }
 
-            // change scene
-            if (interacting && information.CanInteract)
+            // pumpkin teleport
+            if (interacting && information.CanInteract && !state.PumpkinCarved)
             {
                 state.PlayerPosition = transform.position;
-                SceneManager.LoadScene(information.TargetSceneName);
+                state.VinesCut = true;
+
+                // hard coded to get working
+                transform.position = new Vector3(31, -58, transform.position.z);
+                justTeleported = true;
+                controlsEnabled = false;
             }
 
             // dialogue
@@ -416,6 +443,18 @@ public class playerMovement : MonoBehaviour
                 DialogueHandler.onDialogueStart?.Invoke(information.Dialogue);
             }
         }
+    }
+
+    public void carvingComplete()
+    {
+        controlsEnabled = true;
+
+        state.VinesCut = false;
+        transform.position = state.PlayerPosition;
+        justTeleported = true;
+
+        mouseCollectable.SetActive(state.PumpkinCarved);
+        pumpkinFace.SetActive(state.PumpkinCarved);
     }
 
     private void characterControl()

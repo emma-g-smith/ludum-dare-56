@@ -32,28 +32,36 @@ public class CarvingCreator : MonoBehaviour
 
     private void Update()
     {
-        mousePos = Input.mousePosition;
+        if(state.PumpkinCarved)
+        {
+            button.gameObject.SetActive(false);
+        }
         
-        Vector3 pos = _camera.ScreenToWorldPoint(mousePos);
-        Vector3Int gridPos = previewMap.WorldToCell(pos);
-
-        if (gridPos != currentGridPosition)
+        if(state.VinesCut)
         {
-            lastGridPosition = currentGridPosition;
-            currentGridPosition = gridPos;
+            mousePos = Input.mousePosition;
 
-            UpdatePreview();
-        }
+            Vector3 pos = _camera.ScreenToWorldPoint(mousePos);
+            Vector3Int gridPos = previewMap.WorldToCell(pos);
 
-        if (Input.GetMouseButton(0))
-        {
-            HandleDrawing();
-        }
+            if (gridPos != currentGridPosition)
+            {
+                lastGridPosition = currentGridPosition;
+                currentGridPosition = gridPos;
 
-        if (carvingsMade > carvingMinimum)
-        {
-            state.PumpkinCarved = true;
-            button.gameObject.SetActive(true);
+                UpdatePreview();
+            }
+
+            if (Input.GetMouseButton(0))
+            {
+                HandleDrawing();
+            }
+
+            if (carvingsMade > carvingMinimum)
+            {
+                state.PumpkinCarved = true;
+                button.gameObject.SetActive(true);
+            }
         }
     }
 
