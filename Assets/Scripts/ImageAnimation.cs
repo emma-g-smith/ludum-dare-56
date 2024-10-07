@@ -13,6 +13,7 @@ public class ImageAnimation : MonoBehaviour
     private int index = 0;
     private Image image;
     private int frame = 0;
+    private int increment;
 
     void Awake()
     {
@@ -24,13 +25,18 @@ public class ImageAnimation : MonoBehaviour
         if (!loop && index == sprites.Length) return;
         frame++;
         if (frame < spritePerFrame) return;
-        image.sprite = sprites[index];
-        frame = 0;
-        index++;
-        if (index >= sprites.Length)
+
+        if(frame % 10 == 0)
         {
-            if (loop) index = 0;
-            if (destroyOnEnd) Destroy(gameObject);
+            image.sprite = sprites[index];
+            frame = 0;
+            index++;
+            if (index >= sprites.Length)
+            {
+                if (loop) index = 0;
+                if (destroyOnEnd) Destroy(gameObject);
+            }
         }
+        
     }
 }
