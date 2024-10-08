@@ -39,6 +39,7 @@ public class playerMovement : MonoBehaviour
     private bool wasInteracting;
     private bool justTeleported;
     private bool controlsEnabled;
+    private bool dialogueFinished;
     private GameObject lastFriendAquired;
     private float timeElapsed;
 
@@ -138,6 +139,7 @@ public class playerMovement : MonoBehaviour
         wasInteracting = false;
         justTeleported = false;
         controlsEnabled = false;
+        dialogueFinished = false;
 
         timeElapsed = 0;
         mouseCollectable.SetActive(state.PumpkinCarved);
@@ -165,7 +167,14 @@ public class playerMovement : MonoBehaviour
     {
         if (controlsEnabled)
         {
-            movementControl();
+            if (dialogueFinished)
+            {
+                dialogueFinished = false;
+            }
+            else
+            {
+                movementControl();
+            }
 
             characterControl();
 
@@ -192,8 +201,9 @@ public class playerMovement : MonoBehaviour
     private void dialogueEnded()
     {
         controlsEnabled = true;
+        dialogueFinished = true;
 
-        if(lastFriendAquired != null && unlockedCharacters.Contains(Characters.Mouse))
+        if (lastFriendAquired != null && unlockedCharacters.Contains(Characters.Mouse))
         {
             lastFriendAquired.SetActive(false);
         }

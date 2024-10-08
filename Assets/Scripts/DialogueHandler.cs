@@ -53,7 +53,8 @@ public class DialogueHandler : MonoBehaviour
         dialogueInformations[Dialogues.MeetingMouse] = new DialogueInformation(new string[] {
             "Mouse: Thanks for the assist! I have been stuck in that pumpkin for a while now.",
             "Mouse: How about I tag along with you?",
-            "You: I wouldn't mind the company."
+            "You: I wouldn't mind the company.",
+            "Mouse: Mind if we stop for some corn? I am soooo hungry and its just outside the fence?",
         });
         dialogueInformations[Dialogues.MeetingBat] = new DialogueInformation(new string[] {
             "Bat: It's Morbing TIME.",
