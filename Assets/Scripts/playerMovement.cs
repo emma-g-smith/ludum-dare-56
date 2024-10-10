@@ -151,7 +151,7 @@ public class playerMovement : MonoBehaviour
             transform.position = state.PlayerPosition;
             justTeleported = true;
         }
-        if (state.VinesCut)
+        if (state.CanCarve)
         {
             vinesImage.sprite = vinesCutImage;
             vineCollider.enabled = false;
@@ -457,7 +457,7 @@ public class playerMovement : MonoBehaviour
             if (information.CanInteract && !state.PumpkinCarved)
             {
                 state.PlayerPosition = transform.position;
-                state.VinesCut = true;
+                state.CanCarve = true;
 
                 // hard coded to get working
                 transform.position = new Vector3(31, -58, transform.position.z);
@@ -494,7 +494,7 @@ public class playerMovement : MonoBehaviour
     {
         controlsEnabled = true;
 
-        state.VinesCut = false;
+        state.CanCarve = false;
         transform.position = state.PlayerPosition;
         justTeleported = true;
 

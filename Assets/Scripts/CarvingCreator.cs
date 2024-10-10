@@ -37,7 +37,7 @@ public class CarvingCreator : MonoBehaviour
             button.gameObject.SetActive(false);
         }
         
-        if(state.VinesCut)
+        if(state.CanCarve)
         {
             mousePos = Input.mousePosition;
 
