@@ -201,19 +201,19 @@ public class Player : MonoBehaviour
             {
                 cast = Physics2D.BoxCast(transform.position, new Vector2(newHitboxSize, newHitboxSize), 0, Vector2.zero, raycastDistance, (int)GameLogic.Layers.SometimesWall);
 
-                if (cast.collider == null)
+                if (cast.collider != null)
                 {
-                    changeCharacter = true;
-                }
-                else
-                {
-                    //ColliderInformation information = colliderInformations[cast.collider.tag];
+                    CustomizableCollider information = cast.collider.GetComponent<CustomizableCollider>();
 
-                    //if (!information.StopMovement || information.Character == targetCharacter)
-                    //{
-                    //    changeCharacter = true;
-                    //}
+                    if (information.StopsMotion && information.StopsMotionEnum != targetCharacter)
+                    {
+                        changeCharacter = false;
+                    }
                 }
+            }
+            else
+            {
+                changeCharacter = false;
             }
         }
 
@@ -245,19 +245,19 @@ public class Player : MonoBehaviour
         Vector3 moveVector = new Vector3(0, 0);
         bool interacting = false;
 
-        if (Input.GetKey(KeyCode.W))
+        if (Input.GetKey(KeyCode.W) || Input.GetKey(KeyCode.UpArrow))
         {
             moveVector.y += 1;
         }
-        if (Input.GetKey(KeyCode.S))
+        if (Input.GetKey(KeyCode.S) || Input.GetKey(KeyCode.DownArrow))
         {
             moveVector.y -= 1;
         }
-        if (Input.GetKey(KeyCode.D))
+        if (Input.GetKey(KeyCode.D) || Input.GetKey(KeyCode.RightArrow))
         {
             moveVector.x += 1;
         }
-        if (Input.GetKey(KeyCode.A))
+        if (Input.GetKey(KeyCode.A) || Input.GetKey(KeyCode.LeftArrow))
         {
             moveVector.x -= 1;
         }
@@ -415,6 +415,8 @@ public class Player : MonoBehaviour
     private void interact(bool userInteracting)
     {
         // Perform logic to see if interaction should occur
+        bool touchingHintTeleporter = false;
+        bool entering = false;
         HashSet<CustomizableCollider> interactCollisions = new HashSet<CustomizableCollider>();
 
         foreach (GameLogic.Layers layer in interactLayers)
@@ -424,8 +426,24 @@ public class Player : MonoBehaviour
 
             if (hit.collider != null)
             {
-                interactCollisions.Add(hit.collider.gameObject.GetComponent<CustomizableCollider>());
+                CustomizableCollider collider = hit.collider.GetComponent<CustomizableCollider>();
+                interactCollisions.Add(collider);
+
+                if (collider.AllowsTeleportation && collider.InteractionHint)
+                {
+                    touchingHintTeleporter = true;
+                    entering = collider.TeleportationWillEnter;
+                }
             }
+        }
+
+        if (touchingHintTeleporter)
+        {
+            InteractionBoxManager.onCanTeleport?.Invoke(entering);
+        }
+        else
+        {
+            InteractionBoxManager.onCannotTeleport?.Invoke();
         }
 
         if (!interactCollisions.Contains(lastTouchedCollider) || justTeleported)

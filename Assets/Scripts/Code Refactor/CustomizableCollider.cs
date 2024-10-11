@@ -25,8 +25,14 @@ public class CustomizableCollider : MonoBehaviour
 
     // Allows Teleportation
     [SerializeField] private bool allowsTeleportation = false;
+    [SerializeField] private bool interactionHint = false;
+    [SerializeField] private bool teleportationWillEnter = false;
     [SerializeField] private GameObject teleportationTargetObject = null;
     [SerializeField] private GameLogic.Items teleportRequiredItem = GameLogic.Items.None;
+    public bool AllowsTeleportation { get { return allowsTeleportation; } }
+    public bool InteractionHint { get { return interactionHint; } }
+    public bool TeleportationWillEnter { get { return teleportationWillEnter; } }
+
 
     // Allows Pumpkin Carving Minigame
     [SerializeField] private bool allowsCarving = false;
