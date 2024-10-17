@@ -87,6 +87,8 @@ public class CustomizableCollider : MonoBehaviour
     // Method to perform interaction
     public void Interact(GameLogic.Characters currentCharacter, HashSet<GameLogic.Items> inventory)
     {
+        bool interactionSuccessful = true;
+
         // interact once
         if (!canInteract)
         {
@@ -123,6 +125,11 @@ public class CustomizableCollider : MonoBehaviour
             if (inventory.Contains(getsBrokenItem))
             { 
                 gameObject.SetActive(false);
+            }
+
+            if (gameObject.activeSelf) 
+            {
+                interactionSuccessful = false;
             }
         }
 
@@ -185,7 +192,7 @@ public class CustomizableCollider : MonoBehaviour
         }
 
         // enable specified objects
-        if (enableOnInteract != null)
+        if (enableOnInteract != null && interactionSuccessful)
         {
             foreach (GameObject gameObject in enableOnInteract)
             {
@@ -194,7 +201,7 @@ public class CustomizableCollider : MonoBehaviour
         }
 
         // disable specified objects
-        if (disableOnInteract != null)
+        if (disableOnInteract != null && interactionSuccessful)
         {
             foreach (GameObject gameObject in disableOnInteract)
             {

@@ -1286,9 +1286,9 @@ MonoBehaviour:
   state: {fileID: 0}
   interactsOnTouch: 0
   interactsOnce: 0
-  dialogues: 10
+  dialogues: 5
   deleteAfterDialogue: 0
-  dialogueHintCharacter: 0
+  dialogueHintCharacter: 1
   dialogueHintItem: 0
   enableOnInteract: []
   disableOnInteract:
