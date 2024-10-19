@@ -44,8 +44,8 @@ public class DialogueHandler : MonoBehaviour
     {
         dialogueInformations = new Dictionary<Dialogues, DialogueInformation>();
         dialogueInformations[Dialogues.Intro] = new DialogueInformation(new string[] { 
-            "Witch: You are always so forgetful. Your controls are: [WASD] to move [e] to interact/get hints, and [123] to swap",
-            "Witch: sigh... Being immortal is so lonely.",
+            "Witch: You are always so forgetful. Your controls are: [WASD] to move [E] to interact/get hints, and [1,2,3] to swap",
+            "Witch: Sigh... Being immortal is so lonely.",
             "Witch: The last time I saw my husband, he asked me to go see the world for him.",
             "Witch: He knew he’d be gone by the time I returned, but it was his last wish.", 
             "Witch: I would give anything to see him again. My husband… where is he?"
@@ -54,14 +54,14 @@ public class DialogueHandler : MonoBehaviour
             "Mouse: Thanks for the assist! I have been stuck in that pumpkin for a while now.",
             "Mouse: How about I tag along with you?",
             "You: I wouldn't mind the company.",
-            "Mouse: Mind if we stop for some corn? I am soooo hungry and its just outside the fence?",
+            "Mouse: Mind if we stop for some corn? I am soooo hungry and it's just outside the fence?",
         });
         dialogueInformations[Dialogues.MeetingBat] = new DialogueInformation(new string[] {
             "Bat: It's Morbing TIME.",
             "You: Huh?"
         });
         dialogueInformations[Dialogues.HintFly] = new DialogueInformation(new string[] {
-            "You: I can’t cross the water... if only i had a way to fly...?"
+            "You: I can’t cross the water... if only I had a way to fly...?"
         }, noFill:true);
         dialogueInformations[Dialogues.HintSmall] = new DialogueInformation(new string[] {
             "You: I’m not small enough to crawl through"
