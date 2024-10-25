@@ -150,10 +150,10 @@ public class CustomizableCollider : MonoBehaviour
             }
         }
 
-        // allows carving minigame
+        // allows / starts carving minigame
         if (allowsCarving)
         {
-            state.CanCarve = true;
+            CarvingCreator.onCarvingStart?.Invoke();
         }
 
         // play dialogue

@@ -16,28 +16,48 @@ public class CarvingCreator : MonoBehaviour
 
     [SerializeField] private int carvingMinimum = 20;
 
-    [SerializeField] private StateSaveObject state;
-
     private int carvingsMade;
+    private bool pumpkinCarvable;
 
     private Vector2 mousePos;
     private Vector3Int currentGridPosition;
     private Vector3Int lastGridPosition;
 
+    public delegate void OnCarvingStart();
+    public static OnCarvingStart onCarvingStart;
+
+    public delegate void OnCarvingEnd();
+    public static event OnCarvingEnd onCarvingEnd;
+
     private void Start()
     {
         carvingsMade = 0;
+        pumpkinCarvable = false;
+        button.gameObject.SetActive(false);
+
+        onCarvingStart += CarvingStart;
+        onCarvingEnd += CarvingEnd;
+    }
+
+    private void CarvingStart()
+    {
+        pumpkinCarvable = true;
+    }
+
+    public void CarvingEndInvoke()
+    {
+        onCarvingEnd?.Invoke();
+    }
+
+    private void CarvingEnd()
+    {
+        pumpkinCarvable = false;
         button.gameObject.SetActive(false);
     }
 
     private void Update()
-    {
-        if(state.PumpkinCarved)
-        {
-            button.gameObject.SetActive(false);
-        }
-        
-        if(state.CanCarve)
+    {        
+        if(pumpkinCarvable)
         {
             mousePos = Input.mousePosition;
 
@@ -59,7 +79,6 @@ public class CarvingCreator : MonoBehaviour
 
             if (carvingsMade > carvingMinimum)
             {
-                state.PumpkinCarved = true;
                 button.gameObject.SetActive(true);
             }
         }

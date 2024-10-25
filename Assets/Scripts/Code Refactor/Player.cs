@@ -70,7 +70,7 @@ public class Player : MonoBehaviour
         cameraPresets[GameLogic.Scenes.Maze] = new GameLogic.CameraInformation(new Vector3(-32, 0, cameraZ), new List<GameLogic.Scenes> { GameLogic.Scenes.House, GameLogic.Scenes.Tree });
         cameraPresets[GameLogic.Scenes.Tree] = new GameLogic.CameraInformation(new Vector3(-64, 8.5f, cameraZ), new List<GameLogic.Scenes> { GameLogic.Scenes.Maze });
         cameraPresets[GameLogic.Scenes.Garden] = new GameLogic.CameraInformation(new Vector3(30.8f,-4, cameraZ), new List<GameLogic.Scenes> { GameLogic.Scenes.House, GameLogic.Scenes.CaveOutside, GameLogic.Scenes.PumkinCarving });
-        cameraPresets[GameLogic.Scenes.PumkinCarving] = new GameLogic.CameraInformation(new Vector3(30.8f, -55, cameraZ), new List<GameLogic.Scenes> { GameLogic.Scenes.Garden });
+        cameraPresets[GameLogic.Scenes.PumkinCarving] = new GameLogic.CameraInformation(new Vector3(29.33f, -5.67f, cameraZ), new List<GameLogic.Scenes> { GameLogic.Scenes.Garden });
         cameraPresets[GameLogic.Scenes.CaveOutside] = new GameLogic.CameraInformation(new Vector3(61.8f, 0, cameraZ), new List<GameLogic.Scenes> { GameLogic.Scenes.Garden, GameLogic.Scenes.CaveInside });
         cameraPresets[GameLogic.Scenes.CaveInside] = new GameLogic.CameraInformation(new Vector3(93.8f, 0, cameraZ), new List<GameLogic.Scenes> { GameLogic.Scenes.CaveOutside, GameLogic.Scenes.BoneRoom });
         cameraPresets[GameLogic.Scenes.BoneRoom] = new GameLogic.CameraInformation(new Vector3(125.8f, 0, cameraZ), new List<GameLogic.Scenes> { GameLogic.Scenes.CaveInside });
@@ -108,6 +108,8 @@ public class Player : MonoBehaviour
         // Settings event and deligate interactions
         DialogueHandler.onDialogueStart += dialogueStarted;
         DialogueHandler.onDialogueEnd += dialogueEnded;
+        CarvingCreator.onCarvingStart += carvingStarted;
+        CarvingCreator.onCarvingEnd += carvingComplete;
         onUnlockCharacter += unlockCharacter;
         onAddItem += addItem;
         onTeleport += teleport;
@@ -169,12 +171,18 @@ public class Player : MonoBehaviour
         justTeleported = true;
         transform.position = new Vector3(position.x, position.y, transform.position.z);
     }
-    public void carvingComplete()
+    private void carvingStarted()
+    {
+        controlsEnabled = false;
+        Camera.main.orthographicSize = 3; 
+        currentScene = GameLogic.Scenes.PumkinCarving;
+        Camera.main.transform.position = cameraPresets[currentScene].Position;
+    }
+    private void carvingComplete()
     {
         controlsEnabled = true;
-
-        state.CanCarve = false;
-        transform.position = lastPosition;
+        Camera.main.orthographicSize = 9;
+        currentScene = GameLogic.Scenes.Garden;
         justTeleported = true;
     }
 
